@@ -4,12 +4,38 @@ import DriverSidebar from "@/components/driver-sidebar"
 import { Bell, MapPin, Truck } from "lucide-react"
 import Link from "next/link"
 import { MobileNav } from "@/components/mobile-nav"
+import { supabase } from "@/lib/supabase"
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 
 export default function DriverLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const router = useRouter()
+  const [authChecked, setAuthChecked] = useState(false)
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        router.push('/auth/login')
+      } else {
+        setAuthChecked(true)
+      }
+    }
+    checkAuth()
+  }, [router])
+
+  if (!authChecked) {
+    return (
+       <div className="h-screen flex items-center justify-center bg-white">
+          <div className="w-12 h-12 border-4 border-brand-orange border-t-transparent rounded-full animate-spin" />
+       </div>
+    )
+  }
+
   return (
     <div className="flex min-h-screen bg-white">
       <DriverSidebar />
