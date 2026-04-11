@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { smartphone, CreditCard, ChevronRight, Loader2, CheckCircle2 } from "lucide-react"
+import { Smartphone, CreditCard, ChevronRight, Loader2, CheckCircle2 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { toast } from "sonner"
 
