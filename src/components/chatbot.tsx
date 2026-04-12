@@ -8,9 +8,44 @@ import { Input } from "./ui/input"
 
 export default function Chatbot({ asNavbarItem = false }: { asNavbarItem?: boolean }) {
   const [isOpen, setIsOpen] = useState(false)
+  const [input, setInput] = useState("")
   const [messages, setMessages] = useState([
     { role: 'bot', text: 'Bonjour ! Comment puis-je vous aider aujourd\'hui avec J\'ARRIVE ?' }
   ])
+  const [isTyping, setIsTyping] = useState(false)
+
+  const handleSend = async () => {
+    if (!input.trim()) return
+
+    const userMessage = { role: 'user', text: input }
+    setMessages(prev => [...prev, userMessage])
+    setInput("")
+    setIsTyping(true)
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [...messages, userMessage] })
+      })
+
+      if (!response.ok) throw new Error("API error")
+
+      const data = await response.json()
+      setMessages(prev => [...prev, { role: 'bot', text: data.text }])
+    } catch (err) {
+      console.error(err)
+      setMessages(prev => [...prev, { role: 'bot', text: "Désolé, je rencontre des difficultés techniques actuellement. Veuillez réessayer plus tard ou nous appeler au +242 06 621 73 95." }])
+    } finally {
+      setIsTyping(false)
+    }
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSend()
+    }
+  }
 
   return (
     <>
@@ -59,22 +94,42 @@ export default function Chatbot({ asNavbarItem = false }: { asNavbarItem?: boole
             </div>
 
             <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-gray-50/50">
-               {messages.map((m, i) => (
-                 <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${
-                      m.role === 'user' 
-                        ? 'bg-brand-blue text-white rounded-tr-none' 
-                        : 'bg-white shadow-sm border border-gray-100 rounded-tl-none text-slate-700'
-                    }`}>
-                       {m.text}
-                    </div>
-                 </div>
-               ))}
+                {messages.map((m, i) => (
+                  <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                     <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${
+                       m.role === 'user' 
+                         ? 'bg-brand-blue text-white rounded-tr-none' 
+                         : 'bg-white shadow-sm border border-gray-100 rounded-tl-none text-slate-700'
+                     }`}>
+                        {m.text}
+                     </div>
+                  </div>
+                ))}
+                {isTyping && (
+                  <div className="flex justify-start">
+                     <div className="bg-white shadow-sm border border-gray-100 rounded-2xl rounded-tl-none p-3 flex gap-1">
+                        <span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                     </div>
+                  </div>
+                )}
             </div>
 
             <div className="p-4 border-t border-gray-100 flex gap-2 bg-white">
-               <Input placeholder="Écrivez votre message..." className="bg-gray-100 border-none rounded-xl h-11 text-slate-900" />
-               <Button size="icon" className="bg-brand-orange shrink-0 hover:bg-brand-orange-dark shadow-md shadow-brand-orange/20">
+               <Input 
+                 placeholder="Écrivez votre message..." 
+                 className="bg-gray-100 border-none rounded-xl h-11 text-slate-900" 
+                 value={input}
+                 onChange={(e) => setInput(e.target.value)}
+                 onKeyPress={handleKeyPress}
+               />
+               <Button 
+                 onClick={handleSend}
+                 disabled={isTyping}
+                 size="icon" 
+                 className="bg-brand-orange shrink-0 hover:bg-brand-orange-dark shadow-md shadow-brand-orange/20"
+               >
                   <Send className="w-4 h-4" />
                </Button>
             </div>
