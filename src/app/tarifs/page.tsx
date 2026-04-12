@@ -120,6 +120,72 @@ export default function TarifsPage() {
             ))}
           </div>
 
+          {/* Section Tarifs Stockage */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mb-20"
+          >
+            <div className="text-center mb-10">
+              <h2 className="text-3xl md:text-5xl font-black text-slate-900 mb-4">Tarifs <span className="text-brand-blue">Stockage</span></h2>
+              <p className="text-gray-500 max-w-2xl mx-auto font-medium">Des solutions de stockage sécurisées adaptées au volume de vos marchandises.</p>
+            </div>
+            
+            <div className="max-w-4xl mx-auto bg-white rounded-[40px] shadow-premium overflow-hidden border border-gray-100">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-900 text-white text-xs md:text-sm uppercase tracking-widest font-black">
+                      <th className="p-4 md:p-6">Poids Colis</th>
+                      <th className="p-4 md:p-6 text-center text-brand-orange">Tarif Jour</th>
+                      <th className="p-4 md:p-6 text-center text-brand-blue">Tarif Semaine</th>
+                      <th className="p-4 md:p-6 text-center">Tarif Mois</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-sm font-bold divide-y divide-gray-100">
+                    <tr className="hover:bg-gray-50 transition-colors">
+                      <td className="p-4 md:p-6 text-slate-900">Jusqu'à 5 kg</td>
+                      <td className="p-4 md:p-6 text-center text-brand-orange bg-brand-orange/5">500 FCFA</td>
+                      <td className="p-4 md:p-6 text-center text-brand-blue bg-brand-blue/5">2 500 FCFA</td>
+                      <td className="p-4 md:p-6 text-center text-slate-600 bg-slate-50">5 000 FCFA</td>
+                    </tr>
+                    <tr className="hover:bg-gray-50 transition-colors">
+                      <td className="p-4 md:p-6 text-slate-900">Jusqu'à 10 kg</td>
+                      <td className="p-4 md:p-6 text-center text-brand-orange bg-brand-orange/5">1 000 FCFA</td>
+                      <td className="p-4 md:p-6 text-center text-brand-blue bg-brand-blue/5">5 000 FCFA</td>
+                      <td className="p-4 md:p-6 text-center text-slate-600 bg-slate-50">10 000 FCFA</td>
+                    </tr>
+                    <tr className="hover:bg-gray-50 transition-colors">
+                      <td className="p-4 md:p-6 text-slate-900">Jusqu'à 20 kg</td>
+                      <td className="p-4 md:p-6 text-center text-brand-orange bg-brand-orange/5">1 500 FCFA</td>
+                      <td className="p-4 md:p-6 text-center text-brand-blue bg-brand-blue/5">7 500 FCFA</td>
+                      <td className="p-4 md:p-6 text-center text-slate-600 bg-slate-50">15 000 FCFA</td>
+                    </tr>
+                    <tr className="hover:bg-gray-50 transition-colors">
+                      <td className="p-4 md:p-6 text-slate-900">Jusqu'à 50 kg</td>
+                      <td className="p-4 md:p-6 text-center text-brand-orange bg-brand-orange/5">2 500 FCFA</td>
+                      <td className="p-4 md:p-6 text-center text-brand-blue bg-brand-blue/5">12 500 FCFA</td>
+                      <td className="p-4 md:p-6 text-center text-slate-600 bg-slate-50">25 000 FCFA</td>
+                    </tr>
+                    <tr className="hover:bg-gray-50 transition-colors">
+                      <td className="p-4 md:p-6 text-slate-900">Jusqu'à 100 kg</td>
+                      <td className="p-4 md:p-6 text-center text-brand-orange bg-brand-orange/5">5 000 FCFA</td>
+                      <td className="p-4 md:p-6 text-center text-brand-blue bg-brand-blue/5">25 000 FCFA</td>
+                      <td className="p-4 md:p-6 text-center text-slate-600 bg-slate-50">50 000 FCFA</td>
+                    </tr>
+                    <tr className="hover:bg-gray-50 transition-colors border-b-0">
+                      <td className="p-4 md:p-6 text-slate-900">101 kg et +</td>
+                      <td className="p-4 md:p-6 text-center text-brand-orange font-black bg-brand-orange/5">Sur devis</td>
+                      <td className="p-4 md:p-6 text-center text-brand-blue font-black bg-brand-blue/5">Sur devis</td>
+                      <td className="p-4 md:p-6 text-center text-slate-900 font-black bg-slate-50">Sur devis</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </motion.div>
+
           {/* Section FAQ Rapide */}
           <div className="bg-slate-900 rounded-[60px] p-12 text-white relative overflow-hidden">
              <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">

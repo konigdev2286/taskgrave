@@ -11,7 +11,7 @@ import { supabase } from "@/lib/supabase"
 
 export default function LoginPage() {
   const router = useRouter()
-  const [role, setRole] = useState<'client' | 'driver' | 'admin'>('client')
+  const [role, setRole] = useState<'client' | 'driver'>('client')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [email, setEmail] = useState("")
@@ -92,11 +92,10 @@ export default function LoginPage() {
         </div>
 
         <CardContent className="p-10 space-y-8">
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
              {[
                { id: 'client', label: 'Client', icon: User },
                { id: 'driver', label: 'Livreur', icon: Truck },
-               { id: 'admin', label: 'Admin', icon: Building }
              ].map((r) => (
                <button
                  key={r.id}
