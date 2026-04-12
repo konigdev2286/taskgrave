@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "./ui/button"
 import { Input } from "./ui/input"
 
-export default function Chatbot() {
+export default function Chatbot({ asNavbarItem = false }: { asNavbarItem?: boolean }) {
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState([
     { role: 'bot', text: 'Bonjour ! Comment puis-je vous aider aujourd\'hui avec J\'ARRIVE ?' }
@@ -14,13 +14,26 @@ export default function Chatbot() {
 
   return (
     <>
-      <button 
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-8 right-8 w-16 h-16 bg-brand-blue text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50 border-4 border-white"
-      >
-        <MessageSquare className="w-8 h-8" />
-        <span className="absolute -top-1 -right-1 w-5 h-5 bg-brand-orange rounded-full flex items-center justify-center text-[10px] font-bold">1</span>
-      </button>
+      {asNavbarItem ? (
+        <button 
+          onClick={() => setIsOpen(!isOpen)} 
+          className="relative text-slate-600 hover:text-brand-orange transition-colors flex items-center gap-2 font-bold p-2"
+        >
+          <div className="relative">
+             <MessageSquare className="w-5 h-5" />
+             <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-brand-orange rounded-full border-2 border-white" />
+          </div>
+          <span className="hidden md:inline text-sm">Aide</span>
+        </button>
+      ) : (
+        <button 
+          onClick={() => setIsOpen(true)}
+          className="fixed bottom-8 right-8 w-16 h-16 bg-brand-blue text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50 border-4 border-white"
+        >
+          <MessageSquare className="w-8 h-8" />
+          <span className="absolute -top-1 -right-1 w-5 h-5 bg-brand-orange rounded-full flex items-center justify-center text-[10px] font-bold">1</span>
+        </button>
+      )}
 
       <AnimatePresence>
         {isOpen && (

@@ -286,7 +286,7 @@ export default function AdminDashboard() {
                  {[
                    { icon: ShieldCheck, msg: "Nouveau livreur certifié", time: "10:30", color: "text-green-500" },
                    { icon: AlertTriangle, msg: "Litige signalé #8255", time: "09:45", color: "text-red-500" },
-                   { icon: DollarSign, msg: "Paiements MoMo validés", time: "Lundi", color: "text-brand-blue" },
+                   { icon: DollarSign, msg: "Paiements validés", time: "Lundi", color: "text-brand-blue" },
                  ].map((event, i) => (
                    <div key={i} className="flex gap-5 items-start">
                       <div className={`p-3 rounded-2xl bg-gray-50/50 ${event.color} border border-gray-100/50`}>

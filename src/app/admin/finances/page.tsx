@@ -116,8 +116,8 @@ export default function AdminFinances() {
             </thead>
             <tbody>
                {[
-                 { ref: "TR-8291", user: "Jean B.", type: "Encaissement", amt: "2,500", meth: "MTN MoMo", status: "Succès" },
-                 { ref: "TR-8290", user: "Mamadou K.", type: "Décaissement", amt: "15,000", meth: "MTN MoMo", status: "En cours" },
+                 { ref: "TR-8291", user: "Jean B.", type: "Encaissement", amt: "2,500", meth: "Espèces", status: "Succès" },
+                 { ref: "TR-8290", user: "Mamadou K.", type: "Décaissement", amt: "15,000", meth: "Espèces", status: "En cours" },
                  { ref: "TR-8289", user: "Alice M.", type: "Encaissement", amt: "1,800", meth: "Airtel Money", status: "Succès" },
                ].map((t, i) => (
                  <tr key={i} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors">

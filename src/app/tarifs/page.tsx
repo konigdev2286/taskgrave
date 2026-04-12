@@ -10,46 +10,46 @@ import Link from "next/link"
 export default function TarifsPage() {
   const plans = [
     {
-      title: "Petit Colis",
-      desc: "Moins de 5kg. Idéal pour documents et petits objets.",
-      price: "1 500",
+      title: "Pack starter",
+      desc: "Idéal pour commencer, inclut 25 livraisons le mois.",
+      price: "30 000",
       icon: Package,
       color: "text-blue-600",
       bg: "bg-blue-50",
       features: [
-        "Livraison sous 2h",
+        "25 livraisons le mois",
+        "Zone centre et au delà",
         "Suivi en temps réel",
-        "Assurance incluse",
-        "Signature numérique"
+        "Sécurisé"
       ]
     },
     {
-      title: "Gaz & Énergie",
-      desc: "Livraison/Échange de bouteille de gaz (12kg/20kg).",
-      price: "2 500",
-      icon: Flame,
-      color: "text-orange-600",
+      title: "Pack standard",
+      desc: "Pour les besoins réguliers, inclut 80 livraisons le mois.",
+      price: "80 000",
+      icon: Truck,
+      color: "text-brand-orange",
       bg: "bg-orange-50",
       popular: true,
       features: [
-        "Priorité absolue",
-        "Installation gratuite",
-        "Réglementation sécurisée",
-        "Disponible 7j/7"
+        "80 livraisons le mois",
+        "Zone centre plus proche périphérie",
+        "Suivi en temps réel",
+        "Livraison express"
       ]
     },
     {
-      title: "Déménagement",
-      desc: "Transport urbain par utilitaire avec aide au chargement.",
-      price: "25 000",
-      icon: Truck,
-      color: "text-brand-blue",
-      bg: "bg-brand-blue/5",
+      title: "Pack pro",
+      desc: "La solution complète, inclut 250 livraisons le mois.",
+      price: "200 000",
+      icon: Zap,
+      color: "text-slate-900",
+      bg: "bg-slate-100",
       features: [
-        "Camionnette dédiée",
-        "2 manutentionnaires",
-        "Emballage de protection",
-        "Distance illimitée (BZV)"
+        "250 livraisons le mois",
+        "Toute la zone urbaine",
+        "Priorité absolue",
+        "Support dédié"
       ]
     }
   ]
@@ -137,7 +137,7 @@ export default function TarifsPage() {
                          <HelpCircle className="w-6 h-6 text-brand-orange shrink-0" />
                          <div>
                             <p className="font-bold mb-1">Quels sont les modes de paiement ?</p>
-                            <p className="text-sm opacity-60">Nous acceptons MTN Mobile Money, Airtel Money et les paiements par J'ARRIVE Cash.</p>
+                            <p className="text-sm opacity-60">Nous fonctionnons par paiement sur place. Vous payez en espèces à la livraison ou au retrait.</p>
                          </div>
                       </div>
                    </div>

@@ -5,6 +5,7 @@ import { Button } from "./ui/button"
 import { Truck, MapPin, Package, Phone, Menu, X } from "lucide-react"
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import Chatbot from "./chatbot"
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
@@ -32,6 +33,8 @@ export default function Navbar() {
           </div>
 
           <div className="hidden md:flex items-center gap-3">
+            <Chatbot asNavbarItem />
+            <div className="w-px h-6 bg-gray-200 mx-2"></div>
             <Link href="/auth/login">
               <Button variant="ghost" size="sm" className="font-bold text-slate-600">Connexion</Button>
             </Link>
@@ -61,6 +64,9 @@ export default function Navbar() {
               <Link href="/tarifs" className="text-lg font-bold text-slate-900 px-2">Tarifs</Link>
               <Link href="/suivi" className="text-lg font-bold text-slate-900 px-2">Suivi</Link>
               <Link href="/contact" className="text-lg font-bold text-slate-900 px-2">Contact</Link>
+              <div className="px-2">
+                 <Chatbot asNavbarItem />
+              </div>
               <hr className="border-gray-100" />
               <div className="flex flex-col gap-4">
                 <Link href="/auth/login" className="w-full">

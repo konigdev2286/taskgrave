@@ -26,7 +26,7 @@ export default function LoginPage() {
            .from('profiles')
            .select('role')
            .eq('id', session.user.id)
-           .single()
+           .maybeSingle()
          
          if (profile) {
             if (profile.role === 'admin') router.push('/admin')
@@ -56,12 +56,12 @@ export default function LoginPage() {
           .from('profiles')
           .select('role')
           .eq('id', authData.user.id)
-          .single()
+          .maybeSingle()
 
         if (profileError) throw profileError
 
-        if (profile.role === 'admin') router.push('/admin')
-        else if (profile.role === 'driver') router.push('/driver')
+        if (profile?.role === 'admin') router.push('/admin')
+        else if (profile?.role === 'driver') router.push('/driver')
         else router.push('/client')
       }
     } catch (err: any) {

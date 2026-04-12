@@ -26,7 +26,7 @@ export default function AdminLayout({
           .from('profiles')
           .select('role')
           .eq('id', session.user.id)
-          .single()
+          .maybeSingle()
         
         if (profile?.role !== 'admin') {
            router.push('/auth/login')

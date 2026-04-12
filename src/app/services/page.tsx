@@ -10,32 +10,39 @@ import Link from "next/link"
 export default function ServicesPage() {
   const services = [
     {
-      title: "Livraison de Colis",
-      desc: "Documents urgents, cadeaux ou commandes e-commerce. Nous livrons tout à Brazzaville en moins de 2h.",
+      title: "Livraison à domicile",
+      desc: "Nous livrons tout à domicile à Brazzaville, en toute sécurité.",
       icon: Package,
       color: "bg-blue-50 text-brand-blue",
-      details: ["Suivi GPS", "Preuve de livraison", "Assurance colis"]
+      details: ["Rapide", "Fiable", "Toute la ville"]
     },
     {
-      title: "Recharge de Gaz",
-      desc: "Ne tombez plus en panne de gaz ! Nous récupérons votre bouteille vide et vous ramenons une pleine.",
-      icon: Flame,
-      color: "bg-orange-50 text-brand-orange",
-      details: ["Toutes marques", "Installation incluse", "Livraison Express"]
+      title: "Stockage des marchandises",
+      desc: "Besoin de place ? Stockez vos marchandises en toute sécurité.",
+      icon: Box,
+      color: "bg-green-50 text-green-600",
+      details: ["Sécurisé", "Climatisé", "Accès 24/7"]
     },
     {
-      title: "Déménagement & Transport",
-      desc: "Un meuble à déplacer ou un déménagement complet ? Nos utilitaires et porteurs sont à votre service.",
+      title: "Déménagement",
+      desc: "Un service professionnel pour vos changements de domicile.",
       icon: Truck,
       color: "bg-slate-900 text-white",
       details: ["Aide au portage", "Protection meubles", "Tarif forfaitaire"]
     },
     {
-      title: "Stockage Sécurisé",
-      desc: "Besoin de place ? Stockez vos marchandises dans nos entrepôts sécurisés et climatisés.",
-      icon: Box,
-      color: "bg-green-50 text-green-600",
-      details: ["Accès 24/7", "Vidéosurveillance", "Gestion de stock"]
+      title: "Récupération de vos colis",
+      desc: "Nous récupérons vos colis et les livrons pour vous.",
+      icon: ShieldCheck,
+      color: "bg-blue-50 text-blue-600",
+      details: ["En magasin", "Chez les fournisseurs", "Gain de temps"]
+    },
+    {
+      title: "Achat et livraison de votre gaz",
+      desc: "Ne tombez plus en panne de gaz ! Nous nous occupons de tout.",
+      icon: Flame,
+      color: "bg-orange-50 text-brand-orange",
+      details: ["Achat inclus", "Toutes marques", "Livraison Express"]
     }
   ]
 

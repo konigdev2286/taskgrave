@@ -90,7 +90,7 @@ export default function ProfilPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700">Téléphone (MoMo)</label>
+                <label className="text-sm font-bold text-slate-700">Téléphone</label>
                 <div className="relative">
                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                    <Input defaultValue="+242 06 123 4567" className="pl-10 bg-gray-50/50" />

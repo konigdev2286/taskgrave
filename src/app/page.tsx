@@ -10,10 +10,10 @@ import Link from "next/link"
 
 export default function Home() {
   const services = [
-    { title: "Livraison de colis", description: "Particuliers, e-commerçants et restaurants.", icon: Package, color: "bg-blue-50 text-blue-600" },
-    { title: "Déménagement", description: "Service professionnel pour vos changements de domicile.", icon: Layout, color: "bg-orange-50 text-orange-600" },
-    { title: "Livraison de Gaz", description: "Recharge rapide à domicile.", icon: Shield, color: "bg-green-50 text-green-600" },
-    { title: "Stockage", description: "Espaces sécurisés pour vos marchandises.", icon: Zap, color: "bg-purple-50 text-purple-600" },
+    { title: "Livraison à domicile", description: "Particuliers, e-commerçants et restaurants.", icon: Package, color: "bg-blue-50 text-blue-600" },
+    { title: "Stockage des marchandises", description: "Espaces sécurisés pour vos marchandises.", icon: MapPin, color: "bg-orange-50 text-orange-600" },
+    { title: "Déménagement", description: "Service professionnel pour vos changements de domicile.", icon: Layout, color: "bg-green-50 text-green-600" },
+    { title: "Achat et livraison de gaz", description: "Recharge rapide et achat de votre gaz.", icon: Shield, color: "bg-purple-50 text-purple-600" },
   ]
 
   return (
@@ -35,7 +35,7 @@ export default function Home() {
                 Vos colis arrivent <span className="text-brand-orange">maintenant</span> au Congo.
               </h1>
               <p className="text-xl text-gray-600 mb-8 max-w-lg">
-                J'ARRIVE est votre partenaire logistique de confiance. Livraison rapide, sécurisée et suivie en temps réel.
+                J'ARRIVE est votre partenaire logistique de confiance. Nous sommes un service d'import & export et de livraison à domicile, du transport au stockage !
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link href="/auth/register">

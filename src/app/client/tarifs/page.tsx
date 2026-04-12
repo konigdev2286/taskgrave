@@ -7,27 +7,27 @@ import { Package, Truck, Flame, Check, CreditCard } from "lucide-react"
 export default function TarifsPage() {
   const plans = [
     {
-      name: "Standard",
-      price: "1 500",
-      desc: "Idéal pour les particuliers",
-      features: ["Colis jusqu'à 5kg", "Suivi en temps réel", "Livraison sous 60min", "Support chatbot 24/7"],
+      name: "Pack starter",
+      price: "30 000",
+      desc: "25 livraisons le mois",
+      features: ["Zone centre et au delà", "Suivi en temps réel", "Support dédié"],
       color: "border-gray-100",
       btn: "bg-slate-900"
     },
     {
-      name: "Professionnel",
-      price: "1 200",
-      desc: "Par livraison (min. 10/mois)",
-      features: ["Priorité sur les livreurs", "Facturation mensuelle", "Support dédié", "Assurance marchandises"],
+      name: "Pack standard",
+      price: "80 000",
+      desc: "80 livraisons le mois",
+      features: ["Zone centre plus proche périphérie", "Suivi en temps réel", "Livraison express"],
       color: "border-brand-blue shadow-xl shadow-brand-blue/10",
       featured: true,
       btn: "bg-brand-blue"
     },
     {
-      name: "Déménagement",
-      price: "15 000",
-      desc: "Forfait de base Brazzaville",
-      features: ["Camionnette 12m³", "2 Manutentionnaires", "Protection meubles", "Kit de cartons inclus"],
+      name: "Pack pro",
+      price: "200 000",
+      desc: "250 livraisons le mois",
+      features: ["Toute la zone urbaine", "Priorité absolue", "Support VIP"],
       color: "border-brand-orange shadow-xl shadow-brand-orange/10",
       btn: "bg-brand-orange"
     }
@@ -38,7 +38,7 @@ export default function TarifsPage() {
       <div className="text-center">
          <h1 className="text-4xl font-extrabold mb-4 text-slate-900">Nos Tarifs Transparents</h1>
          <p className="text-gray-500 max-w-xl mx-auto font-medium">
-            Aucun frais caché. Payez uniquement pour ce dont vous avez besoin, en FCFA via MoMo.
+            Aucun frais caché. Payez uniquement pour ce dont vous avez besoin, en espèces à la livraison.
          </p>
       </div>
 
@@ -90,8 +90,8 @@ export default function TarifsPage() {
          </div>
          <div className="flex flex-col items-center text-center gap-4">
             <div className="bg-white p-4 rounded-2xl shadow-sm text-yellow-500 border border-gray-50"><CreditCard className="w-6 h-6" /></div>
-            <h4 className="font-bold text-slate-900">MoMo Ready</h4>
-            <p className="text-xs text-gray-400">Paiement instantané</p>
+            <h4 className="font-bold text-slate-900">Paiement sur place</h4>
+            <p className="text-xs text-gray-400">En espèces à la livraison</p>
          </div>
          <div className="flex flex-col items-center text-center gap-4">
             <div className="bg-white p-4 rounded-2xl shadow-sm text-green-500 border border-gray-50"><Flame className="w-6 h-6" /></div>

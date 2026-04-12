@@ -26,10 +26,10 @@ export default function CommanderPage() {
   })
 
   const services = [
-    { id: "colis", title: "Petit Colis", desc: "Moins de 5kg", icon: Package, price: 1500, priceDisplay: "1 500 FCFA" },
-    { id: "gaz", title: "Livraison de Gaz", desc: "Bouteille 12kg/20kg", icon: Flame, price: 2500, priceDisplay: "2 500 FCFA" },
+    { id: "colis", title: "Livraison à domicile", desc: "Vos colis, repas, etc.", icon: Package, price: 1500, priceDisplay: "1 500 FCFA" },
+    { id: "gaz", title: "Achat & livraison de gaz", desc: "Bouteille 12kg/20kg", icon: Flame, price: 2500, priceDisplay: "2 500 FCFA" },
     { id: "moving", title: "Déménagement", desc: "Forfait utilitaire", icon: Truck, price: 25000, priceDisplay: "25 000 FCFA" },
-    { id: "storage", title: "Stockage", desc: "Par m³ / mois", icon: Box, price: 5000, priceDisplay: "5 000 FCFA" },
+    { id: "storage", title: "Stockage de marchandises", desc: "Par m³ / mois", icon: Box, price: 5000, priceDisplay: "5 000 FCFA" },
   ]
 
   const selectedService = services.find(s => s.id === service)
@@ -54,8 +54,8 @@ export default function CommanderPage() {
           dest_address: formData.destination,
           price_fcfa: selectedService?.price || 0,
           status: 'pending',
-          payment_status: 'paid', // Simulated payment
-          payment_method: 'momo'
+          payment_status: 'pending',
+          payment_method: 'cash'
         })
 
       if (error) throw error
@@ -81,7 +81,7 @@ export default function CommanderPage() {
         </motion.div>
         <div className="space-y-2">
           <h2 className="text-3xl font-black text-slate-900">Commande Confirmée !</h2>
-          <p className="text-gray-500">Votre paiement a été validé. Un livreur va être assigné.</p>
+          <p className="text-gray-500">Votre commande a été validée. Le paiement se fera à la livraison.</p>
         </div>
         <p className="text-xs text-brand-blue font-bold animate-pulse">Redirection vers le suivi dans 3 secondes...</p>
       </div>
@@ -211,27 +211,21 @@ export default function CommanderPage() {
           <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
              <Button variant="ghost" className="mb-4 text-brand-blue font-bold px-0" onClick={() => setStep(2)}>← Retour</Button>
              <div>
-                <h2 className="text-2xl font-bold">Paiement via MoMo</h2>
-                <p className="text-gray-500">Confirmez votre commande et payez en toute sécurité.</p>
+                <h2 className="text-2xl font-bold">Validation de la commande</h2>
+                <p className="text-gray-500">Confirmez votre commande. Le paiement se fera à la livraison.</p>
              </div>
 
              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div className="md:col-span-2 space-y-4">
                    <Card className="border-none shadow-sm overflow-hidden">
-                      <div className="bg-yellow-400 p-4 flex items-center justify-between">
-                         <span className="font-bold text-slate-900">MTN MOBILE MONEY</span>
-                         <div className="bg-white rounded-lg px-3 py-1 text-[10px] font-extrabold text-yellow-500">SÉCURISÉ</div>
+                      <div className="bg-green-500 p-4 flex items-center justify-between">
+                         <span className="font-bold text-white">PAIEMENT SUR PLACE</span>
+                         <div className="bg-white rounded-lg px-3 py-1 text-[10px] font-extrabold text-green-600">EN ESPÈCES</div>
                       </div>
                       <CardContent className="p-8 space-y-4">
-                         <p className="text-sm text-gray-600">Entrez votre numéro MoMo pour recevoir la demande de paiement sur votre téléphone.</p>
-                         <Input 
-                           value={formData.momoNumber}
-                           onChange={(e) => setFormData({...formData, momoNumber: e.target.value})}
-                           className="bg-gray-50 focus:bg-white transition-colors" 
-                         />
-                         <div className="p-4 bg-blue-50 text-brand-blue rounded-xl flex gap-3 items-start">
+                         <div className="p-4 bg-green-50 text-green-700 rounded-xl flex gap-3 items-start">
                             <Info className="w-5 h-5 mt-0.5 shrink-0" />
-                            <p className="text-xs font-medium">Vous recevrez un message de confirmation sur votre mobile après avoir cliqué sur le bouton ci-dessous.</p>
+                            <p className="text-sm font-medium">Vous paierez le livreur en espèces une fois que le service sera rendu.</p>
                          </div>
                       </CardContent>
                    </Card>
@@ -246,20 +240,16 @@ export default function CommanderPage() {
                          <span>{selectedService?.title}</span>
                          <span>{selectedService?.priceDisplay}</span>
                       </div>
-                      <div className="flex justify-between text-sm opacity-80">
-                         <span>Frais de service MoMo</span>
-                         <span>100 FCFA</span>
-                      </div>
                       <div className="pt-4 border-t border-white/10 flex justify-between font-bold text-xl">
                          <span>TOTAL</span>
-                         <span className="text-brand-orange">{(selectedService?.price || 0) + 100} FCFA</span>
+                         <span className="text-brand-orange">{selectedService?.price || 0} FCFA</span>
                       </div>
                       <Button 
                         onClick={handlePayment} 
                         disabled={loading}
                         className="w-full bg-brand-orange hover:bg-brand-orange/90 mt-4 h-12 text-lg font-bold shadow-lg shadow-brand-orange/20"
                       >
-                        {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : "Payer Maintenant"}
+                        {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : "Confirmer la commande"}
                       </Button>
                    </CardContent>
                 </Card>

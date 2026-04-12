@@ -19,12 +19,10 @@ import Link from "next/link"
 import { motion } from "framer-motion"
 import { useProfile, useMissions } from "@/hooks/use-supabase"
 import { useState } from "react"
-import { RechargeModal } from "@/components/recharge-modal"
 
 export default function ClientDashboard() {
   const { profile, loading: profileLoading, refreshProfile } = useProfile()
   const { missions, loading: missionsLoading } = useMissions('client')
-  const [isRechargeOpen, setIsRechargeOpen] = useState(false)
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -56,12 +54,6 @@ export default function ClientDashboard() {
       initial="hidden"
       animate="visible"
     >
-      <RechargeModal 
-        isOpen={isRechargeOpen} 
-        onClose={() => setIsRechargeOpen(false)} 
-        onSuccess={refreshProfile} 
-      />
-
       {/* Header avec Statut */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
@@ -111,14 +103,11 @@ export default function ClientDashboard() {
 
         <Card className="border-none shadow-slate-200 shadow-xl bg-slate-900 text-white p-6 overflow-hidden relative group">
            <div className="relative z-10">
-              <p className="text-[10px] font-black opacity-40 uppercase tracking-widest mb-1">Solde J'ARRIVE Cash</p>
-              <h3 className="text-3xl font-black">{(profile?.balance_fcfa || 0).toLocaleString()} <span className="text-xs uppercase opacity-40">FCFA</span></h3>
-              <button 
-                 onClick={() => setIsRechargeOpen(true)}
-                 className="inline-flex items-center text-[10px] font-black text-brand-orange mt-4 hover:underline uppercase tracking-tighter"
-              >
-                 Recharger via MoMo <ChevronRight className="w-3 h-3 ml-1" />
-              </button>
+              <p className="text-[10px] font-black opacity-40 uppercase tracking-widest mb-1">Missions Terminées</p>
+              <h3 className="text-3xl font-black">{missionsLoading ? '...' : missions.filter(m => m.status === 'delivered').length}</h3>
+              <Link href="/client/historique" className="inline-flex items-center text-[10px] font-black text-brand-orange mt-4 hover:underline uppercase tracking-tighter">
+                 Voir l'historique <ChevronRight className="w-3 h-3 ml-1" />
+              </Link>
            </div>
            <TrendingUp className="absolute -bottom-4 -right-4 w-24 h-24 text-white/5 group-hover:scale-110 transition-transform" />
         </Card>

@@ -3,7 +3,7 @@
 import Navbar from "@/components/navbar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+import { Textarea } from "../../components/ui/textarea"
 import { Card } from "@/components/ui/card"
 import { Mail, Phone, MapPin, Send, MessageCircle, Clock, Truck, Globe } from "lucide-react"
 import { motion } from "framer-motion"
@@ -52,7 +52,7 @@ export default function ContactPage() {
                      </div>
                      <div>
                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Téléphone & WhatsApp</p>
-                        <p className="text-xl font-black text-slate-900">+242 06 445 12 34</p>
+                        <p className="text-xl font-black text-slate-900">+242 06 621 73 95</p>
                         <p className="text-xs font-bold text-brand-blue mt-1">Disponible 24h/24</p>
                      </div>
                   </div>

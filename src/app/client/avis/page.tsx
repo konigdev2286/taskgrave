@@ -16,7 +16,7 @@ export default function AvisPage() {
 
   const myReviews = [
     { rating: 5, comment: "Excellent service, Mamadou est très ponctuel.", date: "02 Avril 2026", driver: "Mamadou K." },
-    { rating: 4, comment: "Paiement MoMo un peu lent à valider mais livraison parfaite.", date: "28 Mars 2026", driver: "Christian T." },
+    { rating: 4, comment: "Paiement en espèces très pratique et livraison parfaite.", date: "28 Mars 2026", driver: "Christian T." },
   ]
 
   return (

@@ -48,7 +48,7 @@ CREATE TABLE missions (
   estimated_time_min INTEGER,
   
   payment_status TEXT DEFAULT 'unpaid', -- 'unpaid', 'paid', 'refunded'
-  payment_method TEXT DEFAULT 'momo',
+  payment_method TEXT DEFAULT 'cash',
   
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
   delivered_at TIMESTAMP WITH TIME ZONE,
@@ -63,9 +63,16 @@ ALTER TABLE missions ENABLE ROW LEVEL SECURITY;
 
 -- 5. Policies (Example)
 -- Profiles: Users can read their own profile, Admins can read everything
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'
+  );
+$$ LANGUAGE sql SECURITY DEFINER;
+
 CREATE POLICY "Users can view own profile" ON profiles FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Admins can view all profiles" ON profiles FOR SELECT USING (
-  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  public.is_admin()
 );
 
 -- Missions: Clients can view their own missions, Drivers can view assigned missions/available pending, Admins all.
