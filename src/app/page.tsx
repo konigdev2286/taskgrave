@@ -23,7 +23,7 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative pt-24 md:pt-32 pb-20 overflow-hidden">
         <div className="absolute top-0 right-0 -z-10 w-1/2 h-full bg-brand-blue/5 rounded-bl-[100px]" />
-        
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <motion.div
@@ -47,7 +47,7 @@ export default function Home() {
               </div>
               <div className="mt-10 flex items-center gap-4">
                 <div className="flex -space-x-2">
-                  {[1,2,3,4].map(i => (
+                  {[1, 2, 3, 4].map(i => (
                     <div key={i} className="w-10 h-10 rounded-full border-2 border-white bg-gray-100" />
                   ))}
                 </div>
@@ -64,30 +64,30 @@ export default function Home() {
               className="relative"
             >
               <div className="aspect-square bg-gradient-to-tr from-brand-blue to-brand-orange rounded-3xl opacity-10 animate-pulse absolute inset-0 blur-3xl" />
-               <div className="relative bg-white p-4 rounded-3xl shadow-2xl border border-gray-100">
-                  {/* Visual mockup of tracking */}
-                  <div className="h-[400px] w-full bg-gray-50 rounded-2xl relative overflow-hidden">
-                    <div className="absolute inset-0 opacity-20 bg-[url('https://maps.googleapis.com/maps/api/staticmap?center=Brazzaville,Congo&zoom=13&size=600x400')] bg-cover" />
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                       <motion.div 
-                        animate={{ y: [0, -10, 0] }}
-                        transition={{ repeat: Infinity, duration: 2 }}
-                        className="bg-brand-orange p-3 rounded-full shadow-lg"
-                       >
-                         <Truck className="w-8 h-8 text-white" />
-                       </motion.div>
-                    </div>
+              <div className="relative bg-white p-4 rounded-3xl shadow-2xl border border-gray-100">
+                {/* Visual mockup of tracking */}
+                <div className="h-[400px] w-full bg-gray-50 rounded-2xl relative overflow-hidden">
+                  <div className="absolute inset-0 opacity-20 bg-[url('https://maps.googleapis.com/maps/api/staticmap?center=Brazzaville,Congo&zoom=13&size=600x400')] bg-cover" />
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                    <motion.div
+                      animate={{ y: [0, -10, 0] }}
+                      transition={{ repeat: Infinity, duration: 2 }}
+                      className="bg-brand-orange p-3 rounded-full shadow-lg"
+                    >
+                      <Truck className="w-8 h-8 text-white" />
+                    </motion.div>
                   </div>
-                  <div className="mt-4 p-4 flex justify-between items-center">
-                    <div>
-                      <h4 className="font-bold">Colis en route</h4>
-                      <p className="text-xs text-gray-500">Arrivée estimée dans 15 mins</p>
-                    </div>
-                    <div className="text-right">
-                       <p className="text-xl font-bold text-brand-blue">1 500 FCFA</p>
-                    </div>
+                </div>
+                <div className="mt-4 p-4 flex justify-between items-center">
+                  <div>
+                    <h4 className="font-bold">Colis en route</h4>
+                    <p className="text-xs text-gray-500">Arrivée estimée dans 15 mins</p>
                   </div>
-               </div>
+                  <div className="text-right">
+                    <p className="text-xl font-bold text-brand-blue">1 500 FCFA</p>
+                  </div>
+                </div>
+              </div>
             </motion.div>
           </div>
         </div>
@@ -130,31 +130,23 @@ export default function Home() {
       {/* Interfaces Section */}
       <section className="py-20 bg-gray-50/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-             <div className="bg-brand-blue p-8 rounded-3xl text-white relative overflow-hidden group shadow-xl">
-                <h3 className="text-2xl font-bold mb-4">Interface Client</h3>
-                <p className="mb-6 opacity-80">Commandez vos livraisons, suivez vos colis et gérez vos factures en un clic.</p>
-                <Link href="/auth/register">
-                  <Button className="bg-white text-brand-blue hover:bg-gray-100 border-none">Commencer</Button>
-                </Link>
-                <Layout className="absolute -bottom-10 -right-10 w-40 h-40 opacity-10 group-hover:scale-110 transition-transform" />
-             </div>
-             <div className="bg-brand-orange p-8 rounded-3xl text-white relative overflow-hidden group shadow-xl">
-                <h3 className="text-2xl font-bold mb-4">Interface Livreur</h3>
-                <p className="mb-6 opacity-80">Rejoignez notre équipe de livreurs et commencez à gagner sereinement.</p>
-                <Link href="/driver">
-                  <Button className="bg-white text-brand-orange hover:bg-gray-100 border-none">Devenir Livreur</Button>
-                </Link>
-                <Truck className="absolute -bottom-10 -right-10 w-40 h-40 opacity-10 group-hover:scale-110 transition-transform" />
-             </div>
-             <div className="bg-slate-900 p-8 rounded-3xl text-white relative overflow-hidden group shadow-xl">
-                <h3 className="text-2xl font-bold mb-4">Interface Admin</h3>
-                <p className="mb-6 opacity-80">Gérez votre flotte, supervisez les livraisons et analysez vos revenus.</p>
-                <Link href="/auth/login?role=admin">
-                  <Button className="bg-white text-slate-900 hover:bg-gray-100 border-none">Accéder</Button>
-                </Link>
-                <BarChart3 className="absolute -bottom-10 -right-10 w-40 h-40 opacity-10 group-hover:scale-110 transition-transform" />
-             </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="bg-brand-blue p-8 rounded-3xl text-white relative overflow-hidden group shadow-xl">
+              <h3 className="text-2xl font-bold mb-4">Interface Client</h3>
+              <p className="mb-6 opacity-80">Commandez vos livraisons, suivez vos colis et gérez vos factures en un clic.</p>
+              <Link href="/auth/register">
+                <Button className="bg-white text-brand-blue hover:bg-gray-100 border-none">Commencer</Button>
+              </Link>
+              <Layout className="absolute -bottom-10 -right-10 w-40 h-40 opacity-10 group-hover:scale-110 transition-transform" />
+            </div>
+            <div className="bg-brand-orange p-8 rounded-3xl text-white relative overflow-hidden group shadow-xl">
+              <h3 className="text-2xl font-bold mb-4">Interface Livreur</h3>
+              <p className="mb-6 opacity-80">Rejoignez notre équipe de livreurs et commencez à gagner sereinement.</p>
+              <Link href="/driver">
+                <Button className="bg-white text-brand-orange hover:bg-gray-100 border-none">Devenir Livreur</Button>
+              </Link>
+              <Truck className="absolute -bottom-10 -right-10 w-40 h-40 opacity-10 group-hover:scale-110 transition-transform" />
+            </div>
           </div>
         </div>
       </section>
@@ -162,18 +154,18 @@ export default function Home() {
       {/* Footer */}
       <footer className="bg-white py-12 border-t border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div className="flex justify-center items-center gap-2 mb-6">
-              <div className="bg-brand-orange p-1.5 rounded-lg">
-                <Truck className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-2xl font-bold text-brand-blue italic">J'ARRIVE</span>
+          <div className="flex justify-center items-center gap-2 mb-6">
+            <div className="bg-brand-orange p-1.5 rounded-lg">
+              <Truck className="w-5 h-5 text-white" />
             </div>
-            <p className="text-gray-500 text-sm mb-6">© 2026 J'ARRIVE Logistique République du Congo. Tous droits réservés.</p>
-            <div className="flex justify-center gap-6">
-              <Link href="#" className="text-gray-400 hover:text-brand-blue transition-colors text-sm">Conditions</Link>
-              <Link href="#" className="text-gray-400 hover:text-brand-blue transition-colors text-sm">Confidentialité</Link>
-              <Link href="#" className="text-gray-400 hover:text-brand-blue transition-colors text-sm">Aide</Link>
-            </div>
+            <span className="text-2xl font-bold text-brand-blue italic">J'ARRIVE</span>
+          </div>
+          <p className="text-gray-500 text-sm mb-6">© 2026 J'ARRIVE Logistique République du Congo. Tous droits réservés.</p>
+          <div className="flex justify-center gap-6">
+            <Link href="#" className="text-gray-400 hover:text-brand-blue transition-colors text-sm">Conditions</Link>
+            <Link href="#" className="text-gray-400 hover:text-brand-blue transition-colors text-sm">Confidentialité</Link>
+            <Link href="#" className="text-gray-400 hover:text-brand-blue transition-colors text-sm">Aide</Link>
+          </div>
         </div>
       </footer>
     </div>
