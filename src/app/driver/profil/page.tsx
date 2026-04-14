@@ -1,37 +1,141 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { User, Truck, ShieldCheck, FileText, Camera, CreditCard, Star, MapPin, CheckCircle2, Loader2 } from "lucide-react"
+import { User, Truck, FileText, Camera, CreditCard, Star, MapPin, CheckCircle2, Loader2, AlertCircle } from "lucide-react"
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
+import { toast } from "sonner"
 
 export default function ProfilLivreur() {
   const [profile, setProfile] = useState<any>(null)
+  const [vehicle, setVehicle] = useState<any>({
+    type: 'moto',
+    plate_number: '',
+    model: '',
+    color: ''
+  })
+  
   const [loading, setLoading] = useState(true)
+  const [savingVehicle, setSavingVehicle] = useState(false)
+  const [savingPhone, setSavingPhone] = useState(false)
 
   useEffect(() => {
-    fetchProfile()
+    fetchData()
+
+    let channel: any
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        channel = supabase.channel('profil-updates')
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
+            (payload) => {
+              setProfile(payload.new)
+            }
+          )
+          .subscribe()
+      }
+    })
+
+    return () => {
+      if (channel) supabase.removeChannel(channel)
+    }
   }, [])
 
-  const fetchProfile = async () => {
+  const fetchData = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      const { data, error } = await supabase
+      // Fetch Profile
+      const { data: profileData, error: profileErr } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single()
 
-      if (error) throw error
-      setProfile(data)
-    } catch (error) {
-      console.error("Error fetching profile:", error)
+      if (profileErr) throw profileErr
+      setProfile(profileData)
+
+      // Fetch Vehicle
+      const { data: vehicleData } = await supabase
+        .from('vehicles')
+        .select('*')
+        .eq('driver_id', user.id)
+        .single()
+
+      if (vehicleData) {
+        setVehicle(vehicleData)
+      }
+    } catch (error: any) {
+      console.error("Error fetching data:", error)
+      toast.error(error.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleSaveVehicle = async () => {
+    setSavingVehicle(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error("Non authentifié")
+
+      const { data: existing } = await supabase.from('vehicles').select('id').eq('driver_id', user.id).single()
+
+      if (existing) {
+        // Update
+        const { error } = await supabase
+          .from('vehicles')
+          .update({
+            type: vehicle.type,
+            plate_number: vehicle.plate_number,
+            model: vehicle.model,
+            color: vehicle.color
+          })
+          .eq('id', existing.id)
+        if (error) throw error
+      } else {
+        // Insert
+        const { error } = await supabase
+          .from('vehicles')
+          .insert({
+            driver_id: user.id,
+            type: vehicle.type,
+            plate_number: vehicle.plate_number,
+            model: vehicle.model,
+            color: vehicle.color
+          })
+        if (error) throw error
+      }
+
+      toast.success("Informations du véhicule sauvegardées avec succès !")
+    } catch (err: any) {
+      toast.error("Erreur lors de la sauvegarde : " + err.message)
+    } finally {
+      setSavingVehicle(false)
+    }
+  }
+
+  const handleSavePhone = async () => {
+    setSavingPhone(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ phone: profile.phone })
+        .eq('id', user.id)
+
+      if (error) throw error
+      toast.success("Numéro MoMo mis à jour.")
+    } catch (err: any) {
+      toast.error(err.message)
+    } finally {
+      setSavingPhone(false)
     }
   }
 
@@ -39,6 +143,10 @@ export default function ProfilLivreur() {
     if (!name) return "MK"
     return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
   }
+
+  // Derived metrics
+  const displayRating = profile?.rating ? profile.rating.toFixed(1) : "N/A"
+  const isVerified = profile?.is_verified
 
   if (loading) {
     return (
@@ -57,7 +165,15 @@ export default function ProfilLivreur() {
           <p className="text-gray-500 font-medium">Gérez vos informations et vos documents de bord</p>
         </div>
         <div className="flex gap-3">
-           <span className="bg-green-100 text-green-700 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-green-200 shadow-sm">Compte Certifié</span>
+          {isVerified ? (
+            <span className="bg-green-100 text-green-700 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-green-200 shadow-sm flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4" /> Compte Certifié
+            </span>
+          ) : (
+            <span className="bg-orange-100 text-orange-700 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-orange-200 shadow-sm flex items-center gap-1.5">
+              <AlertCircle className="w-4 h-4" /> En Attente de Vérification
+            </span>
+          )}
         </div>
       </div>
 
@@ -73,21 +189,21 @@ export default function ProfilLivreur() {
                   <Camera className="w-5 h-5" />
                 </button>
               </div>
-              <h3 className="mt-8 text-2xl font-black text-slate-900 leading-tight">{profile?.full_name}</h3>
+              <h3 className="mt-8 text-2xl font-black text-slate-900 leading-tight text-center">{profile?.full_name}</h3>
               <p className="text-sm text-gray-400 font-bold mt-1">
-                Livreur depuis le {new Date(profile?.created_at).toLocaleDateString()}
+                Livreur depuis le {profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : 'Aujourd\'hui'}
               </p>
               
               <div className="mt-10 w-full grid grid-cols-2 gap-4">
                  <div className="p-5 rounded-[24px] bg-gray-50/50 flex flex-col items-center border border-gray-100/50 group hover:bg-white hover:shadow-xl transition-all">
                     <Star className="w-6 h-6 text-yellow-500 fill-current mb-2" />
-                    <p className="text-xl font-black text-slate-900">4.9</p>
-                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Note</p>
+                    <p className="text-xl font-black text-slate-900">{displayRating}</p>
+                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Note Moy.</p>
                  </div>
                  <div className="p-5 rounded-[24px] bg-gray-50/50 flex flex-col items-center border border-gray-100/50 group hover:bg-white hover:shadow-xl transition-all">
-                    <CheckCircle2 className="w-6 h-6 text-green-500 mb-2" />
-                    <p className="text-xl font-black text-slate-900">98%</p>
-                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Fiabilité</p>
+                    <CheckCircle2 className="w-6 h-6 text-brand-blue mb-2" />
+                    <p className="text-xl font-black text-slate-900">{profile?.missions_completed || 0}</p>
+                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest text-center">Missions Terminées</p>
                  </div>
               </div>
             </CardContent>
@@ -99,20 +215,22 @@ export default function ProfilLivreur() {
              </h4>
              <div className="space-y-4">
                 {[
-                  { name: "Permis de conduire", status: "Validé", date: "Expire en 2027" },
-                  { name: "Assurance Véhicule", status: "Validé", date: "Expire le 12/10" },
-                  { name: "Casier Judiciaire", status: "Validé", date: "À jour" },
+                  { name: "Permis de conduire" },
+                  { name: "Assurance Véhicule" },
+                  { name: "Pièce d'Identité" },
                 ].map((doc, i) => (
                   <div key={i} className="flex items-center justify-between py-4 border-b border-gray-50 last:border-0 last:pb-0">
                      <div className="min-w-0 flex-1">
                         <p className="text-sm font-black text-slate-900 truncate leading-none mb-1">{doc.name}</p>
-                        <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">{doc.date}</p>
                      </div>
-                     <span className="text-[10px] font-black text-green-600 bg-green-50 px-3 py-1.5 rounded-xl border border-green-100">VALIDE</span>
+                     {isVerified ? (
+                       <span className="text-[10px] font-black text-green-600 bg-green-50 px-3 py-1.5 rounded-xl border border-green-100">VALIDE</span>
+                     ) : (
+                       <span className="text-[10px] font-black text-orange-600 bg-orange-50 px-3 py-1.5 rounded-xl border border-orange-100">EN REVUE</span>
+                     )}
                   </div>
                 ))}
              </div>
-             <Button variant="outline" className="w-full mt-8 border-gray-100 text-brand-blue font-black text-[10px] h-12 rounded-2xl uppercase tracking-widest hover:bg-brand-blue/5">Mettre à jour</Button>
           </Card>
         </div>
 
@@ -124,27 +242,56 @@ export default function ProfilLivreur() {
                 </CardTitle>
              </CardHeader>
              <CardContent className="p-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                    <div className="space-y-3">
                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Type</label>
-                      <select className="flex h-14 w-full rounded-2xl border-none bg-gray-50 px-5 py-2 text-sm font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-orange/20 shadow-inner">
-                         <option>Moto (Sanya / Haojue)</option>
-                         <option>Camionnette</option>
-                         <option>Vélo / Trottinette</option>
+                      <select 
+                        value={vehicle.type}
+                        onChange={(e) => setVehicle({...vehicle, type: e.target.value})}
+                        className="flex h-14 w-full rounded-2xl border-none bg-gray-50 px-5 py-2 text-sm font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-orange/20 shadow-inner"
+                      >
+                         <option value="moto">Moto</option>
+                         <option value="van">Camionnette (Van)</option>
+                         <option value="bicycle">Vélo / Trottinette</option>
                       </select>
                    </div>
                    <div className="space-y-3">
                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Immatriculation</label>
-                      <Input defaultValue="ABC-123-CG" className="h-14 bg-gray-50 border-none font-black text-sm px-5 rounded-2xl shadow-inner" />
+                      <Input 
+                        value={vehicle.plate_number}
+                        onChange={(e) => setVehicle({...vehicle, plate_number: e.target.value})}
+                        placeholder="Ex: ABC-123-CG" 
+                        className="h-14 bg-gray-50 border-none font-black text-sm px-5 rounded-2xl shadow-inner" 
+                      />
                    </div>
                    <div className="space-y-3">
                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Marque / Modèle</label>
-                      <Input defaultValue="Haojue Express 150" className="h-14 bg-gray-50 border-none font-black text-sm px-5 rounded-2xl shadow-inner" />
+                      <Input 
+                        value={vehicle.model}
+                        onChange={(e) => setVehicle({...vehicle, model: e.target.value})}
+                        placeholder="Ex: Haojue Express 150" 
+                        className="h-14 bg-gray-50 border-none font-black text-sm px-5 rounded-2xl shadow-inner" 
+                      />
                    </div>
                    <div className="space-y-3">
                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Couleur</label>
-                      <Input defaultValue="Bleu J'ARRIVE" className="h-14 bg-gray-50 border-none font-black text-sm px-5 rounded-2xl shadow-inner" />
+                      <Input 
+                        value={vehicle.color}
+                        onChange={(e) => setVehicle({...vehicle, color: e.target.value})}
+                        placeholder="Ex: Bleu" 
+                        className="h-14 bg-gray-50 border-none font-black text-sm px-5 rounded-2xl shadow-inner" 
+                      />
                    </div>
+                </div>
+                
+                <div className="flex justify-end pt-4 border-t border-gray-50">
+                  <Button 
+                    onClick={handleSaveVehicle}
+                    disabled={savingVehicle}
+                    className="bg-slate-900 text-white hover:bg-slate-800 px-10 h-14 font-black rounded-2xl"
+                  >
+                    {savingVehicle ? <Loader2 className="w-5 h-5 animate-spin" /> : "Sauvegarder le véhicule"}
+                  </Button>
                 </div>
              </CardContent>
           </Card>
@@ -156,25 +303,35 @@ export default function ProfilLivreur() {
                 </CardTitle>
              </CardHeader>
              <CardContent className="p-8 space-y-8">
-                <div className="flex items-center justify-between p-8 bg-brand-blue/5 rounded-[32px] border border-brand-blue/10">
-                   <div className="flex items-center gap-5">
+                <div className="flex flex-col md:flex-row md:items-center justify-between p-8 bg-brand-blue/5 rounded-[32px] border border-brand-blue/10 gap-6">
+                   <div className="flex items-center gap-5 flex-1">
                       <div className="bg-white p-4 rounded-2xl shadow-premium">
                          <MapPin className="text-brand-blue w-7 h-7" />
                       </div>
-                      <div>
-                         <p className="text-sm font-black text-slate-900 mb-1">MTN Mobile Money</p>
-                         <p className="text-sm text-brand-blue font-black tracking-widest">{profile?.phone || '+242 06 000 00 00'}</p>
+                      <div className="w-full">
+                         <p className="text-sm font-black text-slate-900 mb-2">Numéro MoMo</p>
+                         <Input 
+                           value={profile?.phone || ''}
+                           onChange={(e) => setProfile({...profile, phone: e.target.value})}
+                           placeholder="Numéro de réception"
+                           className="h-12 bg-white border-none font-black tracking-widest w-full max-w-[250px]"
+                         />
                       </div>
                    </div>
-                   <Button variant="ghost" className="text-brand-blue font-black text-[10px] uppercase tracking-widest hover:bg-brand-blue/10 rounded-xl px-6">Modifier</Button>
                 </div>
-                <div className="flex items-center justify-between gap-8 pt-4">
-                   <div className="p-3 bg-slate-50 rounded-2xl">
-                    <p className="text-[10px] text-gray-400 font-bold leading-relaxed">
-                      Votre compte MoMo sera débité hebdomadairement du montant de vos gains accumulés sur la plateforme J'ARRIVE.
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-8 pt-4">
+                   <div className="p-4 bg-slate-50 border border-gray-100 rounded-2xl flex-1">
+                    <p className="text-xs text-gray-500 font-bold leading-relaxed">
+                      Votre compte MoMo sera crédité automatiquement en fonction de vos requêtes depuis le "Portefeuille". Assurez-vous que le numéro est correct.
                     </p>
                    </div>
-                   <Button className="bg-brand-blue hover:bg-brand-blue-dark px-10 h-14 font-black rounded-2xl shadow-xl shadow-brand-blue/20 text-sm">Enregistrer</Button>
+                   <Button 
+                     onClick={handleSavePhone}
+                     disabled={savingPhone}
+                     className="bg-brand-blue hover:bg-brand-blue-dark px-10 h-14 font-black rounded-2xl shadow-xl shadow-brand-blue/20 text-sm whitespace-nowrap shrink-0"
+                   >
+                     {savingPhone ? <Loader2 className="w-5 h-5 animate-spin text-white" /> : "Mettre à jour"}
+                   </Button>
                 </div>
              </CardContent>
           </Card>

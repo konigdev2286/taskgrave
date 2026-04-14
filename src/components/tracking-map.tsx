@@ -1,33 +1,72 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
-import { GoogleMap, useJsApiLoader, Marker, DirectionsRenderer, InfoWindow } from "@react-google-maps/api"
+import { useEffect, useState } from "react"
+import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from "react-leaflet"
+import "leaflet/dist/leaflet.css"
+import L from "leaflet"
 import { Loader2 } from "lucide-react"
 
-const MAP_CONTAINER_STYLE = {
-  width: "100%",
-  height: "100%",
+// Fix for default Leaflet icons in Next.js
+delete (L.Icon.Default.prototype as any)._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+})
+
+const BRAZZAVILLE_CENTER: [number, number] = [-4.2661, 15.2832]
+
+// Custom Leaflet Icons via SVG
+const createCustomIcon = (svgString: string, size: [number, number], anchor: [number, number]) => {
+  return L.divIcon({
+    html: svgString,
+    className: "custom-div-icon",
+    iconSize: size,
+    iconAnchor: anchor,
+    popupAnchor: [0, -anchor[1]],
+  })
 }
 
-const BRAZZAVILLE_CENTER = { lat: -4.2661, lng: 15.2832 }
+const originIcon = createCustomIcon(`
+  <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
+    <circle cx="18" cy="18" r="14" fill="#2563eb" stroke="white" stroke-width="3"/>
+    <circle cx="18" cy="18" r="5" fill="white"/>
+  </svg>
+`, [36, 36], [18, 18])
 
-const MAP_ID = "jarrive-tracking"
+const destIcon = createCustomIcon(`
+  <svg xmlns="http://www.w3.org/2000/svg" width="40" height="52" viewBox="0 0 40 52">
+    <path d="M20 0C8.95 0 0 8.95 0 20c0 15 20 32 20 32S40 35 40 20C40 8.95 31.05 0 20 0z" fill="#f97316"/>
+    <circle cx="20" cy="20" r="9" fill="white"/>
+    <path d="M20 15l1.5 4.5H26l-3.8 2.8 1.5 4.5L20 24l-3.7 2.8 1.5-4.5L14 19.5h4.5z" fill="#f97316"/>
+  </svg>
+`, [40, 52], [20, 52])
 
-// Custom map style — dark blue/slate theme
-const MAP_STYLES = [
-  { elementType: "geometry", stylers: [{ color: "#1a1f36" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#1a1f36" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#8899bb" }] },
-  { featureType: "road", elementType: "geometry", stylers: [{ color: "#2d3561" }] },
-  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#1a1f36" }] },
-  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#2563eb" }] },
-  { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#f8fafc" }] },
-  { featureType: "poi", stylers: [{ visibility: "off" }] },
-  { featureType: "water", elementType: "geometry", stylers: [{ color: "#0f172a" }] },
-  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#4361ee" }] },
-  { featureType: "administrative", elementType: "labels.text.fill", stylers: [{ color: "#8899bb" }] },
-  { featureType: "transit", stylers: [{ visibility: "off" }] },
-]
+const truckIcon = createCustomIcon(`
+  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+    <circle cx="24" cy="24" r="22" fill="#0f172a" stroke="#2563eb" stroke-width="2.5"/>
+    <text x="24" y="30" text-anchor="middle" font-size="22">🛵</text>
+  </svg>
+`, [48, 48], [24, 24])
+
+
+// Helper component to auto-fit the map bounds
+function BoundsUpdater({ originCoords, destCoords }: { originCoords: [number, number] | null, destCoords: [number, number] | null }) {
+  const map = useMap()
+  
+  useEffect(() => {
+    if (originCoords && destCoords) {
+      const bounds = L.latLngBounds([originCoords, destCoords])
+      map.fitBounds(bounds, { padding: [50, 50] })
+    } else if (originCoords) {
+      map.setView(originCoords, 14)
+    } else if (destCoords) {
+      map.setView(destCoords, 14)
+    }
+  }, [originCoords, destCoords, map])
+
+  return null
+}
 
 type TrackingMapProps = {
   originAddress?: string
@@ -48,81 +87,82 @@ export function TrackingMap({
   destLng,
   status,
 }: TrackingMapProps) {
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""
-
-  const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: apiKey,
-    libraries: ["places"],
-  })
-
-  const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null)
-  const [originCoords, setOriginCoords] = useState<{ lat: number; lng: number } | null>(
-    originLat && originLng ? { lat: originLat, lng: originLng } : null
+  const [originCoords, setOriginCoords] = useState<[number, number] | null>(
+    originLat && originLng ? [originLat, originLng] : null
   )
-  const [destCoords, setDestCoords] = useState<{ lat: number; lng: number } | null>(
-    destLat && destLng ? { lat: destLat, lng: destLng } : null
+  const [destCoords, setDestCoords] = useState<[number, number] | null>(
+    destLat && destLng ? [destLat, destLng] : null
   )
+  const [routePath, setRoutePath] = useState<[number, number][]>([])
   const [geocoding, setGeocoding] = useState(false)
-  const [activeInfo, setActiveInfo] = useState<"origin" | "dest" | null>(null)
 
-  // Geocode addresses if no coordinates provided
+  // 1. Geocode addresses if missing coordinates (using OpenStreetMap Nominatim - Free)
   useEffect(() => {
-    if (!isLoaded) return
     if (originLat && originLng && destLat && destLng) return
+    let isCancelled = false
 
-    const geocoder = new google.maps.Geocoder()
-    setGeocoding(true)
-
-    const geocodeAddress = (address: string): Promise<{ lat: number; lng: number } | null> =>
-      new Promise((resolve) => {
-        geocoder.geocode({ address }, (results, status) => {
-          if (status === "OK" && results && results[0]) {
-            resolve({
-              lat: results[0].geometry.location.lat(),
-              lng: results[0].geometry.location.lng(),
-            })
-          } else {
-            resolve(null)
-          }
-        })
-      })
-
-    async function doGeocode() {
-      const [oCoords, dCoords] = await Promise.all([
-        originAddress ? geocodeAddress(originAddress) : Promise.resolve(null),
-        destAddress ? geocodeAddress(destAddress) : Promise.resolve(null),
-      ])
-      if (oCoords) setOriginCoords(oCoords)
-      if (dCoords) setDestCoords(dCoords)
-      setGeocoding(false)
+    const geocode = async (address: string): Promise<[number, number] | null> => {
+      try {
+        const query = encodeURIComponent(`${address}, Brazzaville, Congo`)
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1`)
+        const data = await res.json()
+        if (data && data.length > 0) {
+          return [parseFloat(data[0].lat), parseFloat(data[0].lon)]
+        }
+      } catch (err) {
+        console.error("Geocoding failed for", address, err)
+      }
+      return null
     }
 
-    doGeocode()
-  }, [isLoaded, originAddress, destAddress, originLat, originLng, destLat, destLng])
-
-  // Compute directions route once we have both coords
-  useEffect(() => {
-    if (!isLoaded || !originCoords || !destCoords) return
-
-    const service = new google.maps.DirectionsService()
-    service.route(
-      {
-        origin: originCoords,
-        destination: destCoords,
-        travelMode: google.maps.TravelMode.DRIVING,
-      },
-      (result, status) => {
-        if (status === google.maps.DirectionsStatus.OK && result) {
-          setDirections(result)
-        }
+    async function fetchCoords() {
+      setGeocoding(true)
+      const [o, d] = await Promise.all([
+        originAddress && (!originLat || !originLng) ? geocode(originAddress) : Promise.resolve(originCoords),
+        destAddress && (!destLat || !destLng) ? geocode(destAddress) : Promise.resolve(destCoords)
+      ])
+      
+      if (!isCancelled) {
+        if (o) setOriginCoords(o)
+        if (d) setDestCoords(d)
+        setGeocoding(false)
       }
-    )
-  }, [isLoaded, originCoords, destCoords])
+    }
 
-  // Determine truck position along route based on status
+    fetchCoords()
+    return () => { isCancelled = true }
+  }, [originAddress, destAddress, originLat, originLng, destLat, destLng])
+
+  // 2. Fetch the driving route (using OSRM - Free)
+  useEffect(() => {
+    if (!originCoords || !destCoords) return
+    let isCancelled = false
+
+    const fetchRoute = async () => {
+      try {
+        // OSRM expects: longitude,latitude
+        const originStr = `${originCoords[1]},${originCoords[0]}`
+        const destStr = `${destCoords[1]},${destCoords[0]}`
+        const res = await fetch(`https://routing.openstreetmap.de/routed-car/route/v1/driving/${originStr};${destStr}?overview=full&geometries=geojson`)
+        const data = await res.json()
+
+        if (!isCancelled && data.routes && data.routes.length > 0) {
+          // Convert GeoJSON [lng, lat] back to Leaflet [lat, lng]
+          const coords = data.routes[0].geometry.coordinates.map((c: [number, number]) => [c[1], c[0]])
+          setRoutePath(coords)
+        }
+      } catch (error) {
+        console.error("Routing failed", error)
+      }
+    }
+
+    fetchRoute()
+    return () => { isCancelled = true }
+  }, [originCoords, destCoords])
+
+  // 3. Compute the active truck position
   const truckPosition = (() => {
-    if (!directions || !directions.routes[0]) return null
-    const path = directions.routes[0].overview_path
+    if (routePath.length === 0) return null
     const statusProgress: Record<string, number> = {
       pending:   0,
       accepted:  0.05,
@@ -130,161 +170,70 @@ export function TrackingMap({
       delivered: 1,
     }
     const prog = statusProgress[status || "pending"] ?? 0
-    const idx = Math.floor(prog * (path.length - 1))
-    return { lat: path[idx].lat(), lng: path[idx].lng() }
+    const idx = Math.floor(prog * (routePath.length - 1))
+    return routePath[idx]
   })()
 
-  const mapCenter = originCoords || BRAZZAVILLE_CENTER
-
-  // No API key configured
-  if (!apiKey || apiKey === "your-api-key") {
-    return <NoApiKeyFallback originAddress={originAddress} destAddress={destAddress} />
-  }
-
-  if (loadError) {
+  if (geocoding) {
     return (
-      <div className="flex items-center justify-center h-full bg-slate-900 rounded-3xl text-red-400 font-bold text-sm">
-        Erreur de chargement de la carte
-      </div>
-    )
-  }
-
-  if (!isLoaded || geocoding) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full bg-slate-900 rounded-3xl gap-3">
+      <div className="flex flex-col items-center justify-center h-full bg-slate-900 rounded-[32px] gap-3">
         <Loader2 className="w-8 h-8 text-brand-blue animate-spin" />
         <p className="text-white/40 text-xs font-bold uppercase tracking-widest">
-          {!isLoaded ? "Chargement de la carte..." : "Géolocalisation en cours..."}
+          Géolocalisation gratuite...
         </p>
       </div>
     )
   }
 
   return (
-    <GoogleMap
-      mapContainerStyle={MAP_CONTAINER_STYLE}
-      center={mapCenter}
-      zoom={12}
-      options={{
-        styles: MAP_STYLES,
-        disableDefaultUI: false,
-        zoomControl: true,
-        streetViewControl: false,
-        mapTypeControl: false,
-        fullscreenControl: true,
-      }}
-    >
-      {/* Route line */}
-      {directions && (
-        <DirectionsRenderer
-          directions={directions}
-          options={{
-            suppressMarkers: true,
-            polylineOptions: {
-              strokeColor: "#2563eb",
-              strokeWeight: 5,
-              strokeOpacity: 0.85,
-            },
-          }}
+    <div className="relative w-full h-full rounded-[32px] overflow-hidden bg-slate-100 z-0">
+      <MapContainer 
+        center={originCoords || BRAZZAVILLE_CENTER} 
+        zoom={13} 
+        scrollWheelZoom={false}
+        className="w-full h-full z-0"
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         />
-      )}
 
-      {/* Origin marker */}
-      {originCoords && (
-        <Marker
-          position={originCoords}
-          icon={{
-            url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
-              <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
-                <circle cx="18" cy="18" r="14" fill="#2563eb" stroke="white" stroke-width="3"/>
-                <circle cx="18" cy="18" r="5" fill="white"/>
-              </svg>
-            `)}`,
-            scaledSize: new google.maps.Size(36, 36),
-            anchor: new google.maps.Point(18, 18),
-          }}
-          onClick={() => setActiveInfo("origin")}
-        />
-      )}
+        <BoundsUpdater originCoords={originCoords} destCoords={destCoords} />
 
-      {activeInfo === "origin" && originCoords && (
-        <InfoWindow position={originCoords} onCloseClick={() => setActiveInfo(null)}>
-          <div style={{ fontFamily: "system-ui", maxWidth: 180 }}>
-            <p style={{ fontSize: 10, color: "#6b7280", fontWeight: 800, textTransform: "uppercase", letterSpacing: 2, marginBottom: 4 }}>Départ</p>
-            <p style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{originAddress}</p>
-          </div>
-        </InfoWindow>
-      )}
+        {/* The Route Polyline */}
+        {routePath.length > 0 && (
+          <Polyline positions={routePath} pathOptions={{ color: '#2563eb', weight: 5, opacity: 0.8 }} />
+        )}
 
-      {/* Destination marker */}
-      {destCoords && (
-        <Marker
-          position={destCoords}
-          icon={{
-            url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
-              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="52" viewBox="0 0 40 52">
-                <path d="M20 0C8.95 0 0 8.95 0 20c0 15 20 32 20 32S40 35 40 20C40 8.95 31.05 0 20 0z" fill="#f97316"/>
-                <circle cx="20" cy="20" r="9" fill="white"/>
-                <path d="M20 15l1.5 4.5H26l-3.8 2.8 1.5 4.5L20 24l-3.7 2.8 1.5-4.5L14 19.5h4.5z" fill="#f97316"/>
-              </svg>
-            `)}`,
-            scaledSize: new google.maps.Size(40, 52),
-            anchor: new google.maps.Point(20, 52),
-          }}
-          onClick={() => setActiveInfo("dest")}
-        />
-      )}
+        {/* Origin Marker */}
+        {originCoords && (
+          <Marker position={originCoords} icon={originIcon}>
+            <Popup>
+              <div style={{ fontFamily: "system-ui", maxWidth: 180 }}>
+                <p style={{ fontSize: 10, color: "#6b7280", fontWeight: 800, textTransform: "uppercase", letterSpacing: 2, marginBottom: 4 }}>Départ</p>
+                <p style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", margin: 0 }}>{originAddress || "Départ"}</p>
+              </div>
+            </Popup>
+          </Marker>
+        )}
 
-      {activeInfo === "dest" && destCoords && (
-        <InfoWindow position={destCoords} onCloseClick={() => setActiveInfo(null)}>
-          <div style={{ fontFamily: "system-ui", maxWidth: 180 }}>
-            <p style={{ fontSize: 10, color: "#6b7280", fontWeight: 800, textTransform: "uppercase", letterSpacing: 2, marginBottom: 4 }}>Destination</p>
-            <p style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{destAddress}</p>
-          </div>
-        </InfoWindow>
-      )}
+        {/* Destination Marker */}
+        {destCoords && (
+          <Marker position={destCoords} icon={destIcon}>
+            <Popup>
+              <div style={{ fontFamily: "system-ui", maxWidth: 180 }}>
+                <p style={{ fontSize: 10, color: "#6b7280", fontWeight: 800, textTransform: "uppercase", letterSpacing: 2, marginBottom: 4 }}>Destination</p>
+                <p style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", margin: 0 }}>{destAddress || "Destination"}</p>
+              </div>
+            </Popup>
+          </Marker>
+        )}
 
-      {/* Animated truck marker */}
-      {truckPosition && status !== "pending" && (
-        <Marker
-          position={truckPosition}
-          icon={{
-            url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
-              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
-                <circle cx="24" cy="24" r="22" fill="#0f172a" stroke="#2563eb" stroke-width="2.5"/>
-                <text x="24" y="30" text-anchor="middle" font-size="22">🛵</text>
-              </svg>
-            `)}`,
-            scaledSize: new google.maps.Size(48, 48),
-            anchor: new google.maps.Point(24, 24),
-          }}
-          zIndex={100}
-        />
-      )}
-    </GoogleMap>
-  )
-}
-
-// ──────────────────────────────────────────────
-// Fallback when no API key is set
-// ──────────────────────────────────────────────
-function NoApiKeyFallback({ originAddress, destAddress }: { originAddress?: string; destAddress?: string }) {
-  const query = encodeURIComponent(`${originAddress || ""} to ${destAddress || "Brazzaville"}`)
-  const embedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(originAddress || "Brazzaville, Congo")}&output=embed&z=13`
-
-  return (
-    <div className="relative w-full h-full rounded-[32px] overflow-hidden">
-      <iframe
-        src={embedUrl}
-        className="w-full h-full border-0"
-        allowFullScreen
-        loading="lazy"
-        referrerPolicy="no-referrer-when-downgrade"
-        title="Carte de suivi"
-      />
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-slate-900/80 to-transparent p-4 text-white text-center text-xs font-bold">
-        Configurez NEXT_PUBLIC_GOOGLE_MAPS_API_KEY pour le suivi en temps réel
-      </div>
+        {/* Moving Truck */}
+        {truckPosition && status !== "pending" && (
+          <Marker position={truckPosition} icon={truckIcon} zIndexOffset={100} />
+        )}
+      </MapContainer>
     </div>
   )
 }

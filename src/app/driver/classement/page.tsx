@@ -1,16 +1,75 @@
 "use client"
 
 import { Card, CardContent } from "@/components/ui/card"
-import { Trophy, Star, TrendingUp, Medal, Users, ChevronRight } from "lucide-react"
+import { Trophy, Star, TrendingUp, Medal, Users, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useEffect, useState } from "react"
+import { supabase } from "@/lib/supabase"
+
+type DriverProfile = {
+  id: string
+  full_name: string
+  total_pts: number
+  missions_completed: number
+  rating: number
+  avatar_url?: string
+}
 
 export default function ClassementPage() {
-  const topDrivers = [
-    { rank: 1, name: "Christian T.", pts: "4,850", missions: 142, rating: 5.0, avatar: "CT" },
-    { rank: 2, name: "Mamadou K. (Vous)", pts: "4,210", missions: 128, rating: 4.9, avatar: "MK" },
-    { rank: 3, name: "Paul M.", pts: "3,940", missions: 115, rating: 4.8, avatar: "PM" },
-    { rank: 4, name: "Anicet B.", pts: "3,200", missions: 98, rating: 4.7, avatar: "AB" },
-  ]
+  const [drivers, setDrivers] = useState<DriverProfile[]>([])
+  const [loading, setLoading] = useState(true)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetchRanking()
+    
+    // Subscribe to realtime updates on profiles table
+    const channel = supabase.channel('driver_ranking_updates')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'profiles', filter: "role=eq.driver" },
+        (payload) => {
+          fetchRanking() // Refetch the list when points/ratings update
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [])
+
+  const fetchRanking = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) setCurrentUserId(user.id)
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, full_name, total_pts, missions_completed, rating, avatar_url')
+      .eq('role', 'driver')
+      .order('total_pts', { ascending: false })
+
+    if (data) {
+      setDrivers(data as DriverProfile[])
+    }
+    setLoading(false)
+  }
+
+  const getInitials = (name?: string) => {
+    if (!name) return "DR"
+    const parts = name.split(' ')
+    if (parts.length > 1) return (parts[0][0] + parts[1][0]).toUpperCase()
+    return name.slice(0, 2).toUpperCase()
+  }
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] gap-3">
+        <Loader2 className="w-8 h-8 text-brand-blue animate-spin" />
+        <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Mise à jour du classement...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-8 pb-12">
@@ -24,36 +83,51 @@ export default function ClassementPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
          <div className="lg:col-span-2 space-y-4">
-            {topDrivers.map((driver) => (
-              <Card key={driver.rank} className={`border border-gray-100 shadow-sm transition-all overflow-hidden ${driver.rank === 2 ? 'ring-2 ring-brand-orange shadow-xl shadow-brand-orange/5' : 'bg-white'}`}>
-                 <CardContent className="p-6 flex items-center gap-6">
-                    <div className="flex flex-col items-center gap-1 w-12 shrink-0">
-                       {driver.rank <= 3 ? (
-                         <div className={`p-1 rounded-full ${driver.rank === 1 ? 'bg-yellow-400' : driver.rank === 2 ? 'bg-gray-300' : 'bg-orange-400'}`}>
-                            <Medal className="w-6 h-6 text-white" />
+            {drivers.map((driver, index) => {
+              const rank = index + 1
+              const isMe = driver.id === currentUserId
+              
+              return (
+                <Card key={driver.id} className={`border border-gray-100 shadow-sm transition-all overflow-hidden ${isMe ? 'ring-2 ring-brand-orange shadow-xl shadow-brand-orange/5' : 'bg-white'}`}>
+                   <CardContent className="p-6 flex items-center gap-6">
+                      <div className="flex flex-col items-center gap-1 w-12 shrink-0">
+                         {rank <= 3 ? (
+                           <div className={`p-1 rounded-full ${rank === 1 ? 'bg-yellow-400' : rank === 2 ? 'bg-gray-300' : 'bg-orange-400'}`}>
+                              <Medal className="w-6 h-6 text-white" />
+                           </div>
+                         ) : <span className="text-xl font-black text-gray-300">#{rank}</span>}
+                      </div>
+
+                      <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center font-bold text-brand-blue border-2 border-white shadow-sm shrink-0">
+                         {getInitials(driver.full_name)}
+                      </div>
+
+                      <div className="flex-1">
+                         <p className="font-bold text-slate-900">
+                           {driver.full_name || "Livreur Anonyme"} {isMe && "(Vous)"}
+                         </p>
+                         <div className="flex items-center gap-4 text-xs text-gray-400 font-medium mt-1">
+                            <span className="flex items-center gap-1"><Star className="w-3 h-3 text-yellow-500 fill-current" /> {driver.rating?.toFixed(1) || "5.0"}</span>
+                            <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {driver.missions_completed || 0} missions</span>
                          </div>
-                       ) : <span className="text-xl font-black text-gray-300">#{driver.rank}</span>}
-                    </div>
+                      </div>
 
-                    <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center font-bold text-brand-blue border-2 border-white shadow-sm shrink-0">
-                       {driver.avatar}
-                    </div>
-
-                    <div className="flex-1">
-                       <p className="font-bold text-slate-900">{driver.name}</p>
-                       <div className="flex items-center gap-4 text-xs text-gray-400 font-medium mt-1">
-                          <span className="flex items-center gap-1"><Star className="w-3 h-3 text-yellow-500 fill-current" /> {driver.rating}</span>
-                          <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {driver.missions} missions</span>
-                       </div>
-                    </div>
-
-                    <div className="text-right">
-                       <p className="text-xl font-black text-brand-orange">{driver.pts} <span className="text-[10px] uppercase">pts</span></p>
-                       <p className="text-[10px] text-green-600 font-bold uppercase tracking-widest">+ {300 - (driver.rank * 50)} FCFA Bonus</p>
-                    </div>
-                 </CardContent>
-              </Card>
-            ))}
+                      <div className="text-right">
+                         <p className="text-xl font-black text-brand-orange">{driver.total_pts?.toLocaleString() || 0} <span className="text-[10px] uppercase">pts</span></p>
+                         {rank <= 5 && (
+                           <p className="text-[10px] text-green-600 font-bold uppercase tracking-widest">+ {300 - (rank * 50)} FCFA Bonus</p>
+                         )}
+                      </div>
+                   </CardContent>
+                </Card>
+              )
+            })}
+            
+            {drivers.length === 0 && (
+              <div className="text-center p-8 bg-gray-50 rounded-[32px] text-gray-500">
+                Aucun livreur évalué pour le moment.
+              </div>
+            )}
          </div>
 
          <div className="space-y-6">
