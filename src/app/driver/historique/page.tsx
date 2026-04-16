@@ -17,6 +17,13 @@ export default function HistoriqueLivreur() {
 
   useEffect(() => {
     fetchHistory()
+    const channel = supabase
+      .channel('driver-history')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'missions' }, () => {
+        fetchHistory()
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
   }, [])
 
   const fetchHistory = async () => {

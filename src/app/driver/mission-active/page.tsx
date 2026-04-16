@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
+import { ChatDialog } from "@/components/chat-dialog"
 
 export default function MissionActive() {
   const router = useRouter()
@@ -17,6 +18,13 @@ export default function MissionActive() {
 
   useEffect(() => {
     fetchActiveMission()
+    const channel = supabase
+      .channel('driver-active-mission')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'missions' }, () => {
+        fetchActiveMission()
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
   }, [])
 
   const fetchActiveMission = async () => {
@@ -217,9 +225,16 @@ export default function MissionActive() {
                         <Button className="bg-white text-brand-blue border border-blue-100 font-bold hover:bg-blue-50 flex gap-2">
                            <Phone className="w-4 h-4" /> Appeler
                         </Button>
-                        <Button className="bg-white text-brand-orange border border-orange-100 font-bold hover:bg-orange-50 flex gap-2">
-                           <MessageSquare className="w-4 h-4" /> Chat
-                        </Button>
+                        <ChatDialog 
+                            missionId={mission.id}
+                            currentUserId={mission.driver_id}
+                            otherUserName={mission.client?.full_name || "Client"}
+                            trigger={
+                               <Button className="bg-white text-brand-orange border border-orange-100 font-bold hover:bg-orange-50 flex gap-2">
+                                  <MessageSquare className="w-4 h-4" /> Chat
+                               </Button>
+                            }
+                         />
                      </div>
                   </div>
                </CardContent>

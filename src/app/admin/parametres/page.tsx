@@ -27,7 +27,10 @@ export default function AdminParametresPage() {
     maintenance_mode: false,
     auto_assign_drivers: true,
     require_kyc: true,
-    admin_notifications: true
+    admin_notifications: true,
+    base_fee: 1000,
+    price_per_km: 500,
+    commission_rate: 15
   })
 
   useEffect(() => {
@@ -79,7 +82,10 @@ export default function AdminParametresPage() {
           maintenance_mode: settingsData.maintenance_mode,
           auto_assign_drivers: settingsData.auto_assign_drivers,
           require_kyc: settingsData.require_kyc,
-          admin_notifications: settingsData.admin_notifications
+          admin_notifications: settingsData.admin_notifications,
+          base_fee: settingsData.base_fee,
+          price_per_km: settingsData.price_per_km,
+          commission_rate: settingsData.commission_rate
         })
       }
     } catch (err) {
@@ -115,8 +121,8 @@ export default function AdminParametresPage() {
     }
   }
 
-  const handleSettingChange = async (key: keyof typeof settings) => {
-    const newValue = !settings[key]
+  const handleSettingChange = async (key: keyof typeof settings, value?: any) => {
+    const newValue = value !== undefined ? value : !settings[key]
     // Optimistic UI update
     setSettings(prev => ({ ...prev, [key]: newValue }))
     
@@ -127,12 +133,29 @@ export default function AdminParametresPage() {
         .eq('id', 1)
 
       if (error) throw error
-      toast.success("Configuration globale modifiée.")
+      toast.success("Configuration modifiée.")
     } catch (err: any) {
       console.error(err)
       toast.error("Erreur: " + err.message)
       // Revert optimism if failed
-      setSettings(prev => ({ ...prev, [key]: !newValue }))
+      setSettings(prev => ({ ...prev, [key]: settings[key] }))
+    }
+  }
+
+  const handleResetPassword = async () => {
+    try {
+      if (!profile.email) {
+        toast.error("Email administrateur introuvable.")
+        return
+      }
+      const { error } = await supabase.auth.resetPasswordForEmail(profile.email, {
+        redirectTo: `${window.location.origin}/auth/update-password`,
+      })
+      if (error) throw error
+      toast.success("Lien de réinitialisation envoyé avec succès.")
+    } catch (err: any) {
+      console.error(err)
+      toast.error("Erreur: " + err.message)
     }
   }
 
@@ -228,7 +251,7 @@ export default function AdminParametresPage() {
                   </h3>
                   <p className="text-gray-500 text-sm font-medium">Envoyez un lien sécurisé à votre adresse email pour changer votre mot de passe d&apos;accès.</p>
                 </div>
-                <Button variant="outline" className="border-red-200 text-red-600 font-bold rounded-2xl hover:bg-red-50 hover:text-red-700 whitespace-nowrap">
+                <Button onClick={handleResetPassword} variant="outline" className="border-red-200 text-red-600 font-bold rounded-2xl hover:bg-red-50 hover:text-red-700 whitespace-nowrap">
                   Générer le lien
                 </Button>
               </div>
@@ -275,6 +298,50 @@ export default function AdminParametresPage() {
                   <Switch checked={settings.admin_notifications} onCheckedChange={() => handleSettingChange('admin_notifications')} className="shrink-0 mt-1" />
                 </div>
                 
+                <div className="p-6">
+                   <p className="font-bold text-slate-900 mb-4">Tarification (FCFA)</p>
+                   <div className="space-y-4">
+                      <div className="flex justify-between items-center group">
+                         <Label className="text-xs text-gray-400 font-bold uppercase shrink-0">Frais de base</Label>
+                         <div className="flex items-center group-hover:bg-gray-50 rounded-lg p-1 transition-all">
+                            <input 
+                              type="number" 
+                              className="w-20 text-right bg-transparent font-black text-brand-blue outline-none border-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                              value={settings.base_fee}
+                              onBlur={(e) => handleSettingChange('base_fee', parseInt(e.target.value))}
+                              onChange={(e) => setSettings({...settings, base_fee: parseInt(e.target.value)})}
+                            />
+                            <span className="text-[10px] font-black text-gray-300 ml-1">FCFA</span>
+                         </div>
+                      </div>
+                      <div className="flex justify-between items-center group">
+                         <Label className="text-xs text-gray-400 font-bold uppercase shrink-0">Prix / KM</Label>
+                         <div className="flex items-center group-hover:bg-gray-50 rounded-lg p-1 transition-all">
+                            <input 
+                              type="number" 
+                              className="w-20 text-right bg-transparent font-black text-brand-blue outline-none border-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                              value={settings.price_per_km}
+                              onBlur={(e) => handleSettingChange('price_per_km', parseInt(e.target.value))}
+                              onChange={(e) => setSettings({...settings, price_per_km: parseInt(e.target.value)})}
+                            />
+                            <span className="text-[10px] font-black text-gray-300 ml-1">FCFA</span>
+                         </div>
+                      </div>
+                      <div className="flex justify-between items-center group">
+                         <Label className="text-xs text-gray-400 font-bold uppercase shrink-0">Commission</Label>
+                         <div className="flex items-center group-hover:bg-gray-50 rounded-lg p-1 transition-all">
+                            <input 
+                              type="number" 
+                              className="w-20 text-right bg-transparent font-black text-brand-orange outline-none border-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                              value={settings.commission_rate}
+                              onBlur={(e) => handleSettingChange('commission_rate', parseInt(e.target.value))}
+                              onChange={(e) => setSettings({...settings, commission_rate: parseInt(e.target.value)})}
+                            />
+                            <span className="text-[10px] font-black text-gray-300 ml-1">%</span>
+                         </div>
+                      </div>
+                   </div>
+                </div>
               </div>
             </CardContent>
           </Card>

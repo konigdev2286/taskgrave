@@ -2,15 +2,31 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Gift, Star, Award, TrendingUp, ChevronRight, Zap } from "lucide-react"
+import { Gift, Star, Award, TrendingUp, ChevronRight, Zap, Loader2 } from "lucide-react"
 import { motion } from "framer-motion"
+import { useProfile } from "@/hooks/use-supabase"
 
 export default function FidelitePage() {
+  const { profile, loading } = useProfile()
+  
   const rewards = [
-    { title: "Livraison Offerte", cost: "500 pts", icon: Gift, desc: "Valable sur n'importe quel trajet Brazzaville - Pointe Noire." },
-    { title: "-50% sur le Gaz", cost: "300 pts", icon: Zap, desc: "Réduction immédiate sur une recharge de 12kg." },
-    { title: "Priorité VIP", cost: "1000 pts", icon: Award, desc: "Passez devant tout le monde pendant les heures de pointe." },
+    { title: "Livraison Offerte", cost: 500, icon: Gift, desc: "Valable sur n'importe quel trajet Brazzaville - Pointe Noire." },
+    { title: "-50% sur le Gaz", cost: 300, icon: Zap, desc: "Réduction immédiate sur une recharge de 12kg." },
+    { title: "Priorité VIP", cost: 1000, icon: Award, desc: "Passez devant tout le monde pendant les heures de pointe." },
   ]
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
+        <Loader2 className="w-10 h-10 text-brand-blue animate-spin" />
+        <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Vérification de vos points...</p>
+      </div>
+    )
+  }
+
+  const pts = profile?.total_pts || 0
+  const nextTarget = 1500
+  const progress = Math.min((pts / nextTarget) * 100, 100)
 
   return (
     <div className="space-y-8 pb-12">
@@ -28,18 +44,22 @@ export default function FidelitePage() {
         <Card className="lg:col-span-1 border-none bg-brand-blue p-8 rounded-[40px] text-white overflow-hidden relative shadow-2xl">
            <div className="relative z-10">
               <p className="text-sm font-bold opacity-80 uppercase tracking-widest mb-1">Votre Solde</p>
-              <h2 className="text-6xl font-black mb-6">1,250 <span className="text-xl font-bold opacity-60">pts</span></h2>
+              <h2 className="text-6xl font-black mb-6">{pts.toLocaleString()} <span className="text-xl font-bold opacity-60">pts</span></h2>
               
               <div className="space-y-4">
                  <div className="h-2 bg-white/20 rounded-full overflow-hidden">
                     <motion.div 
                       initial={{ width: 0 }}
-                      animate={{ width: "75%" }}
+                      animate={{ width: `${progress}%` }}
                       transition={{ duration: 1.5, ease: "easeOut" }}
                       className="h-full bg-brand-orange" 
                     />
                  </div>
-                 <p className="text-xs font-medium opacity-80">Encore 250 points pour passer au statut <span className="font-bold text-brand-orange">PLATINIUM</span></p>
+                 <p className="text-xs font-medium opacity-80 text-center">
+                   {pts < nextTarget 
+                     ? `Encore ${nextTarget - pts} points pour passer au statut PLATINIUM`
+                     : "Statut PLATINIUM atteint !"}
+                 </p>
               </div>
 
               <div className="mt-12 grid grid-cols-2 gap-4">
@@ -71,7 +91,7 @@ export default function FidelitePage() {
                             <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100 group-hover:bg-brand-blue/10 group-hover:border-brand-blue/20 transition-colors">
                                <reward.icon className="w-6 h-6 text-brand-blue" />
                             </div>
-                            <span className="text-sm font-black text-brand-orange bg-brand-orange/10 px-3 py-1 rounded-full">{reward.cost}</span>
+                            <span className="text-sm font-black text-brand-orange bg-brand-orange/10 px-3 py-1 rounded-full">{reward.cost} pts</span>
                          </div>
                          <h4 className="font-bold text-lg mb-2 text-slate-900">{reward.title}</h4>
                          <p className="text-sm text-gray-500 mb-6">{reward.desc}</p>

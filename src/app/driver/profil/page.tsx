@@ -20,6 +20,7 @@ export default function ProfilLivreur() {
   const [loading, setLoading] = useState(true)
   const [savingVehicle, setSavingVehicle] = useState(false)
   const [savingPhone, setSavingPhone] = useState(false)
+  const [uploadingDoc, setUploadingDoc] = useState<string | null>(null)
 
   useEffect(() => {
     fetchData()
@@ -139,6 +140,30 @@ export default function ProfilLivreur() {
     }
   }
 
+  const handleUploadDoc = async (docName: string, file: File) => {
+    setUploadingDoc(docName)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${user.id}/${docName}.${fileExt}`
+      const filePath = `documents/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('driver-documents')
+        .upload(filePath, file, { upsert: true })
+
+      if (uploadError) throw uploadError
+
+      toast.success(`${docName} téléchargé avec succès !`)
+    } catch (err: any) {
+      toast.error("Erreur d'upload : " + err.message)
+    } finally {
+      setUploadingDoc(null)
+    }
+  }
+
   const getInitials = (name: string) => {
     if (!name) return "MK"
     return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
@@ -214,19 +239,44 @@ export default function ProfilLivreur() {
                 <FileText className="w-5 h-5 text-brand-blue" /> Documents
              </h4>
              <div className="space-y-4">
-                {[
-                  { name: "Permis de conduire" },
-                  { name: "Assurance Véhicule" },
-                  { name: "Pièce d'Identité" },
+                 {[
+                  { name: "Permis de conduire", key: "permis" },
+                  { name: "Assurance Véhicule", key: "assurance" },
+                  { name: "Pièce d'Identité", key: "id" },
                 ].map((doc, i) => (
-                  <div key={i} className="flex items-center justify-between py-4 border-b border-gray-50 last:border-0 last:pb-0">
-                     <div className="min-w-0 flex-1">
-                        <p className="text-sm font-black text-slate-900 truncate leading-none mb-1">{doc.name}</p>
+                  <div key={i} className="flex flex-col gap-2 py-4 border-b border-gray-50 last:border-0 last:pb-0">
+                     <div className="flex items-center justify-between">
+                        <div className="min-w-0 flex-1">
+                           <p className="text-sm font-black text-slate-900 truncate leading-none mb-1">{doc.name}</p>
+                        </div>
+                        {isVerified ? (
+                          <span className="text-[10px] font-black text-green-600 bg-green-50 px-3 py-1.5 rounded-xl border border-green-100">VALIDE</span>
+                        ) : (
+                          <span className="text-[10px] font-black text-orange-600 bg-orange-50 px-3 py-1.5 rounded-xl border border-orange-100">EN REVUE</span>
+                        )}
                      </div>
-                     {isVerified ? (
-                       <span className="text-[10px] font-black text-green-600 bg-green-50 px-3 py-1.5 rounded-xl border border-green-100">VALIDE</span>
-                     ) : (
-                       <span className="text-[10px] font-black text-orange-600 bg-orange-50 px-3 py-1.5 rounded-xl border border-orange-100">EN REVUE</span>
+                     {!isVerified && (
+                       <div className="flex items-center gap-2">
+                          <input 
+                            type="file" 
+                            id={`file-${doc.key}`}
+                            className="hidden" 
+                            accept="image/*,.pdf"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0]
+                              if (file) handleUploadDoc(doc.name, file)
+                            }}
+                          />
+                          <Button 
+                            variant="outline" 
+                            className="w-full text-[10px] font-black uppercase tracking-widest h-9 rounded-xl flex gap-2"
+                            onClick={() => document.getElementById(`file-${doc.key}`)?.click()}
+                            disabled={uploadingDoc === doc.name}
+                          >
+                            {uploadingDoc === doc.name ? <Loader2 className="w-3 h-3 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+                            {uploadingDoc === doc.name ? "Envoi..." : "Transférer le document"}
+                          </Button>
+                       </div>
                      )}
                   </div>
                 ))}

@@ -214,17 +214,26 @@ export function useAdminFinances() {
     pendingPaymentCount: 0,
   })
   const [transactions, setTransactions] = useState<any[]>([])
+  const [withdrawals, setWithdrawals] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   const fetchFinances = useCallback(async () => {
     try {
-      const { data: allMissions } = await supabase
-        .from('missions')
-        .select('*, client:client_id(full_name), driver:driver_id(full_name)')
-        .order('created_at', { ascending: false })
-        .limit(50)
+      const [missionsRes, withdrawalsRes] = await Promise.all([
+        supabase
+          .from('missions')
+          .select('*, client:client_id(full_name), driver:driver_id(full_name)')
+          .order('created_at', { ascending: false })
+          .limit(50),
+        supabase
+          .from('withdrawals')
+          .select('*, driver:driver_id(full_name, phone)')
+          .order('created_at', { ascending: false })
+          .limit(50)
+      ])
 
-      const missions = allMissions || []
+      const missions = missionsRes.data || []
+      const withdrawalData = withdrawalsRes.data || []
 
       const totalVolume = missions.reduce((acc, m) => acc + (m.price_fcfa || 0), 0)
       const paidMissions = missions.filter(m => m.payment_status === 'paid')
@@ -243,6 +252,7 @@ export function useAdminFinances() {
         pendingPaymentCount,
       })
       setTransactions(missions)
+      setWithdrawals(withdrawalData)
     } catch (err) {
       console.error('Finance fetch error:', err)
     } finally {
@@ -253,15 +263,23 @@ export function useAdminFinances() {
   useEffect(() => {
     fetchFinances()
 
-    const sub = supabase
+    const missionsSub = supabase
       .channel('admin-finances-missions')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'missions' }, fetchFinances)
       .subscribe()
 
-    return () => { supabase.removeChannel(sub) }
+    const withdrawalsSub = supabase
+      .channel('admin-finances-withdrawals')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'withdrawals' }, fetchFinances)
+      .subscribe()
+
+    return () => { 
+      supabase.removeChannel(missionsSub)
+      supabase.removeChannel(withdrawalsSub)
+    }
   }, [fetchFinances])
 
-  return { finances, transactions, loading, refresh: fetchFinances }
+  return { finances, transactions, withdrawals, loading, refresh: fetchFinances }
 }
 
 // ─────────────────────────────────────────────
@@ -286,12 +304,12 @@ export function useAdminNotificationCount() {
     fetch()
 
     const profileSub = supabase
-      .channel('admin-notif-profiles')
+      .channel(`admin-notif-profiles-${Math.random()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, fetch)
       .subscribe()
 
     const missionSub = supabase
-      .channel('admin-notif-missions')
+      .channel(`admin-notif-missions-${Math.random()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'missions' }, fetch)
       .subscribe()
 
@@ -302,4 +320,59 @@ export function useAdminNotificationCount() {
   }, [fetch])
 
   return { pendingVerifications, pendingMissions, total: pendingVerifications + pendingMissions }
+}
+// ─────────────────────────────────────────────
+// Hook: Client — Mission status updates for bell badge
+// ─────────────────────────────────────────────
+export function useClientNotificationCount() {
+  const [count, setCount] = useState(0)
+
+  const fetch = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const { count: mCount } = await supabase.from('missions')
+      .select('*', { count: 'exact', head: true })
+      .eq('client_id', user.id)
+      .in('status', ['accepted', 'picked_up'])
+    
+    setCount(mCount || 0)
+  }, [])
+
+  useEffect(() => {
+    fetch()
+    const sub = supabase
+      .channel(`client-notif-missions-${Math.random()}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'missions' }, fetch)
+      .subscribe()
+    return () => { supabase.removeChannel(sub) }
+  }, [fetch])
+
+  return { count }
+}
+
+// ─────────────────────────────────────────────
+// Hook: Driver — Available missions for bell badge
+// ─────────────────────────────────────────────
+export function useDriverNotificationCount() {
+  const [count, setCount] = useState(0)
+
+  const fetch = useCallback(async () => {
+    const { count: mCount } = await supabase.from('missions')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'pending')
+    
+    setCount(mCount || 0)
+  }, [])
+
+  useEffect(() => {
+    fetch()
+    const sub = supabase
+      .channel(`driver-notif-missions-${Math.random()}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'missions' }, fetch)
+      .subscribe()
+    return () => { supabase.removeChannel(sub) }
+  }, [fetch])
+
+  return { count }
 }

@@ -1,7 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import { supabase } from "@/lib/supabase"
 import { cn } from "@/lib/utils"
 import { 
   LayoutDashboard, 
@@ -16,7 +17,8 @@ import {
   Gift,
   LogOut,
   Truck,
-  User
+  User,
+  HelpCircle
 } from "lucide-react"
 
 const sidebarLinks = [
@@ -31,10 +33,18 @@ const sidebarLinks = [
   { name: "Avis", href: "/client/avis", icon: Star },
   { name: "Messages", href: "/client/chat", icon: MessageSquare },
   { name: "Paramètres", href: "/client/parametres", icon: Settings },
+  { name: "Centre d'Aide", href: "/client/aide", icon: HelpCircle },
 ]
 
 export default function ClientSidebar() {
   const pathname = usePathname()
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push('/auth/login')
+    router.refresh()
+  }
 
   return (
     <aside className="hidden lg:flex w-64 bg-white border-r border-gray-100 flex-col h-screen sticky top-0">
@@ -69,7 +79,7 @@ export default function ClientSidebar() {
       </nav>
 
       <div className="p-4 border-t border-gray-100">
-        <button className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 w-full transition-colors">
+        <button onClick={handleLogout} className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 w-full transition-colors">
           <LogOut className="w-5 h-5" />
           Déconnexion
         </button>

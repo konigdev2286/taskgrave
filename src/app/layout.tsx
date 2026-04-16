@@ -17,6 +17,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "J'ARRIVE Logistique",
   description: "Livraison rapide et sécurisée au Congo",
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({
@@ -34,6 +35,17 @@ export default function RootLayout({
         <Toaster position="top-center" richColors />
         <RealTimeManager />
         {children}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js');
+                });
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   );

@@ -8,6 +8,7 @@ import { MobileNav } from "@/components/mobile-nav"
 import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import { useClientNotificationCount } from "@/hooks/use-supabase"
 
 export default function ClientLayout({
   children,
@@ -16,6 +17,7 @@ export default function ClientLayout({
 }) {
   const router = useRouter()
   const [authChecked, setAuthChecked] = useState(false)
+  const { count: notifCount } = useClientNotificationCount()
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -56,9 +58,16 @@ export default function ClientLayout({
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
-             <button className="relative p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-500">
+             <button 
+                onClick={() => router.push('/client/notifications')}
+                className="relative p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-500"
+             >
                 <Bell className="w-5 h-5" />
-                <span className="absolute top-2 right-2 w-2 h-2 bg-brand-orange rounded-full border-2 border-white" />
+                {notifCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-brand-orange text-white text-[9px] font-black rounded-full border-2 border-white flex items-center justify-center px-0.5 animate-pulse">
+                    {notifCount}
+                  </span>
+                )}
              </button>
              <div className="flex items-center gap-2 md:gap-3 pl-2 md:pl-4 border-l border-gray-100">
                 <div className="hidden sm:block text-right">

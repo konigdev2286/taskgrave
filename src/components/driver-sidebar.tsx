@@ -1,7 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import { supabase } from "@/lib/supabase"
 import { cn } from "@/lib/utils"
 import { 
   LayoutDashboard, 
@@ -31,6 +32,14 @@ const driverLinks = [
 
 export default function DriverSidebar() {
   const pathname = usePathname()
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push('/auth/login')
+    router.refresh()
+  }
+
   const [isOnline, setIsOnline] = useState(true)
 
   return (
@@ -79,7 +88,7 @@ export default function DriverSidebar() {
       </nav>
 
       <div className="p-4 border-t border-gray-100">
-        <button className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 w-full transition-colors">
+        <button onClick={handleLogout} className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 w-full transition-colors">
           <LogOut className="w-5 h-5" />
           Déconnexion
         </button>

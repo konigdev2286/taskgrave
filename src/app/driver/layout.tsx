@@ -7,6 +7,7 @@ import { MobileNav } from "@/components/mobile-nav"
 import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import { useDriverNotificationCount } from "@/hooks/use-supabase"
 
 export default function DriverLayout({
   children,
@@ -15,6 +16,7 @@ export default function DriverLayout({
 }) {
   const router = useRouter()
   const [authChecked, setAuthChecked] = useState(false)
+  const { count: notifCount } = useDriverNotificationCount()
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -57,9 +59,16 @@ export default function DriverLayout({
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
-             <button className="relative p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-500">
+             <button 
+                onClick={() => router.push('/driver/missions')}
+                className="relative p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-500"
+             >
                 <Bell className="w-5 h-5" />
-                <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
+                {notifCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-red-500 text-white text-[9px] font-black rounded-full border-2 border-white flex items-center justify-center px-0.5 animate-pulse">
+                    {notifCount}
+                  </span>
+                )}
              </button>
              <Link href="/driver/profil" className="flex items-center gap-2 md:gap-3 pl-2 md:pl-4 border-l border-gray-100 hover:opacity-80 transition-opacity">
                 <div className="hidden sm:block text-right">

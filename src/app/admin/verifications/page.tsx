@@ -6,12 +6,15 @@ import { ShieldCheck, FileText, CheckCircle2, XCircle, Eye, User, Calendar, Exte
 import { motion, AnimatePresence } from "framer-motion"
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
+import { toast } from "sonner"
 
 export default function AdminVerifications() {
   const [drivers, setDrivers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedDriver, setSelectedDriver] = useState<any>(null)
   const [processing, setProcessing] = useState(false)
+  const [documents, setDocuments] = useState<any[]>([])
+  const [loadingDocs, setLoadingDocs] = useState(false)
 
   useEffect(() => {
     fetchDrivers()
@@ -27,6 +30,12 @@ export default function AdminVerifications() {
       supabase.removeChannel(channel)
     }
   }, [])
+
+  useEffect(() => {
+    if (selectedDriver) {
+      fetchDocuments(selectedDriver.id)
+    }
+  }, [selectedDriver])
 
   const fetchDrivers = async () => {
     try {
@@ -48,20 +57,61 @@ export default function AdminVerifications() {
     }
   }
 
+  const fetchDocuments = async (driverId: string) => {
+    setLoadingDocs(true)
+    try {
+      const { data, error } = await supabase.storage
+        .from('driver-documents')
+        .list(`documents/${driverId}`)
+
+      if (error) throw error
+      
+      const docsWithUrls = await Promise.all((data || []).map(async (file) => {
+        const { data: { publicUrl } } = supabase.storage
+          .from('driver-documents')
+          .getPublicUrl(`documents/${driverId}/${file.name}`)
+        return { name: file.name, url: publicUrl }
+      }))
+
+      setDocuments(docsWithUrls)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoadingDocs(false)
+    }
+  }
+
   const handleApprove = async (id: string) => {
     setProcessing(true)
     try {
-      // Note: Using 'is_verified' which might needs to be added to DB
       const { error } = await supabase
         .from('profiles')
         .update({ is_verified: true })
         .eq('id', id)
 
       if (error) throw error
-      
-      // Update local state is handled by real-time subscription
+      setSelectedDriver(prev => prev ? { ...prev, is_verified: true } : null)
+      toast.success("Conducteur approuvé !")
     } catch (error: any) {
-      alert("Erreur lors de l'approbation: " + error.message)
+      toast.error("Erreur lors de l'approbation: " + error.message)
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  const handleReject = async (id: string) => {
+    if (!confirm("Voulez-vous vraiment rejeter ce dossier ?")) return
+    setProcessing(true)
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_verified: false }) // Reset verification (could also add a 'rejected' status)
+        .eq('id', id)
+
+      if (error) throw error
+      toast.info("Dossier rejeté.")
+    } catch (error: any) {
+      toast.error(error.message)
     } finally {
       setProcessing(false)
     }
@@ -147,17 +197,40 @@ export default function AdminVerifications() {
                <div className="bg-slate-900 p-8 text-white relative">
                   <div className="flex justify-between items-start mb-10">
                      <div className="space-y-1">
-                        <p className="text-[10px] font-black opacity-40 uppercase tracking-widest">Aperçu du document</p>
+                        <p className="text-[10px] font-black opacity-40 uppercase tracking-widest">Aperçu du dossier</p>
                         <h2 className="text-2xl font-black">{selectedDriver.full_name}</h2>
                      </div>
                      <span className="bg-brand-orange text-white text-[10px] font-black px-3 py-1 rounded-full uppercase">DRIVER_ID: {selectedDriver.id.slice(0,8)}</span>
                   </div>
                   
-                  <div className="aspect-[1.6/1] bg-white/5 rounded-3xl border border-white/10 flex items-center justify-center group overflow-hidden relative">
-                     <div className="relative z-10 text-center">
-                        <FileText className="w-12 h-12 text-white/20 mx-auto mb-4" />
-                        <Button className="bg-white text-slate-900 font-bold px-6 h-10 shadow-xl border-none">Ouvrir les documents</Button>
-                     </div>
+                  <div className="aspect-[1.6/1] bg-white/5 rounded-3xl border border-white/10 overflow-hidden relative group">
+                     {loadingDocs ? (
+                       <div className="absolute inset-0 flex items-center justify-center">
+                         <Loader2 className="w-6 h-6 animate-spin text-brand-orange" />
+                       </div>
+                     ) : documents.length > 0 ? (
+                        <div className="p-4 grid grid-cols-2 gap-4 h-full overflow-y-auto">
+                          {documents.map((doc, idx) => (
+                            <a 
+                              key={idx} 
+                              href={doc.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="aspect-[4/3] bg-white/10 rounded-2xl overflow-hidden border border-white/10 hover:border-brand-orange transition-all relative group/doc"
+                            >
+                              <img src={doc.url} alt={doc.name} className="w-full h-full object-cover opacity-60 group-hover/doc:opacity-100 transition-opacity" />
+                              <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
+                                <p className="text-[8px] font-black truncate">{doc.name}</p>
+                              </div>
+                            </a>
+                          ))}
+                        </div>
+                     ) : (
+                       <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8">
+                         <FileText className="w-12 h-12 text-white/10 mb-4" />
+                         <p className="text-sm font-bold text-white/40">Aucun document téléchargé</p>
+                       </div>
+                     )}
                   </div>
                </div>
 
@@ -186,13 +259,18 @@ export default function AdminVerifications() {
                   </div>
 
                   <div className="pt-8 flex gap-4 border-t border-gray-50">
-                     <Button variant="outline" className="flex-1 h-14 border-red-100 text-red-500 font-black flex gap-2">
+                     <Button 
+                        variant="outline" 
+                        onClick={() => handleReject(selectedDriver.id)}
+                        disabled={processing}
+                        className="flex-1 h-14 border-red-100 text-red-500 font-black flex gap-2"
+                     >
                         <XCircle className="w-5 h-5" /> REJETER
                      </Button>
                      <Button 
-                       onClick={() => handleApprove(selectedDriver.id)}
-                       disabled={processing}
-                       className="flex-1 h-14 bg-green-600 text-white font-black shadow-xl shadow-green-100 border-none flex gap-2 hover:bg-green-700"
+                        onClick={() => handleApprove(selectedDriver.id)}
+                        disabled={processing}
+                        className="flex-1 h-14 bg-green-600 text-white font-black shadow-xl shadow-green-100 border-none flex gap-2 hover:bg-green-700"
                      >
                         {processing ? <Loader2 className="w-5 h-5 animate-spin" /> : <><CheckCircle2 className="w-5 h-5" /> APPROUVER</>}
                      </Button>

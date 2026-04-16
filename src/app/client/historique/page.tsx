@@ -2,7 +2,8 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Package, Calendar, MapPin, CreditCard, ChevronRight, Search, Filter, Loader2 } from "lucide-react"
+import { Package, Calendar, MapPin, CreditCard, ChevronRight, Search, Filter, Loader2, Star } from "lucide-react"
+import Link from "next/link"
 import { Input } from "@/components/ui/input"
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
@@ -13,6 +14,13 @@ export default function HistoriquePage() {
 
   useEffect(() => {
     fetchHistory()
+    const channel = supabase
+      .channel('client-history')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'missions' }, () => {
+        fetchHistory()
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
   }, [])
 
   const fetchHistory = async () => {
@@ -105,15 +113,25 @@ export default function HistoriquePage() {
                         {mission.price_fcfa.toLocaleString()} FCFA
                       </td>
                       <td className="px-8 py-6">
-                        <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                          mission.status === 'delivered' ? 'bg-green-100 text-green-700' : 
-                          mission.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                          'bg-blue-100 text-brand-blue'
-                        }`}>
-                          {mission.status === 'delivered' ? 'Livré' : 
-                           mission.status === 'cancelled' ? 'Annulé' : 
-                           mission.status === 'picked_up' ? 'En route' : 'En attente'}
-                        </span>
+                        <div className="flex items-center gap-3">
+                          <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                            mission.status === 'delivered' ? 'bg-green-100 text-green-700' : 
+                            mission.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                            'bg-blue-100 text-brand-blue'
+                          }`}>
+                            {mission.status === 'delivered' ? 'Livré' : 
+                             mission.status === 'cancelled' ? 'Annulé' : 
+                             mission.status === 'picked_up' ? 'En route' : 'En attente'}
+                          </span>
+                          
+                          {mission.status === 'delivered' && (
+                            <Link href={`/client/suivi?id=${mission.id}`}>
+                              <Button variant="ghost" size="sm" className="h-7 text-[10px] font-black uppercase text-brand-orange hover:text-brand-orange hover:bg-orange-50 gap-1 px-2 rounded-lg">
+                                <Star className="w-3 h-3 fill-current" /> Noter
+                              </Button>
+                            </Link>
+                          )}
+                        </div>
                       </td>
                       <td className="px-8 py-6 text-right">
                         <Button variant="ghost" size="icon" className="text-gray-200 group-hover:text-brand-blue group-hover:translate-x-1 transition-all">

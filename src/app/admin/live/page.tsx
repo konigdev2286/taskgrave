@@ -2,17 +2,21 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Truck, MapPin, Clock, CheckCircle2, AlertCircle, Search, Filter, Mail, Phone, ExternalLink } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Truck, MapPin, Clock, CheckCircle2, AlertCircle, Search, Filter, Mail, Phone, ExternalLink, UserPlus } from "lucide-react"
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
 import { motion, AnimatePresence } from "framer-motion"
 
 export default function AdminLive() {
   const [missions, setMissions] = useState<any[]>([])
+  const [drivers, setDrivers] = useState<any[]>([])
+  const [assigningId, setAssigningId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetchMissions()
+    fetchVerifiedDrivers()
     
     const channel = supabase
       .channel('admin-live-feed')
@@ -25,6 +29,34 @@ export default function AdminLive() {
       supabase.removeChannel(channel)
     }
   }, [])
+
+  const fetchVerifiedDrivers = async () => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('role', 'driver')
+      .eq('is_verified', true)
+    setDrivers(data || [])
+  }
+
+  const handleAssign = async (missionId: string, driverId: string) => {
+    try {
+      setAssigningId(missionId)
+      const { error } = await supabase
+        .from('missions')
+        .update({
+          driver_id: driverId,
+          status: 'accepted' // 'accepted' signifies the mission is taken
+        })
+        .eq('id', missionId)
+      
+      if (error) throw error
+    } catch (e: any) {
+      alert("Erreur lors de l'assignation: " + e.message)
+    } finally {
+      setAssigningId(null)
+    }
+  }
 
   const fetchMissions = async () => {
     const { data } = await supabase
@@ -156,7 +188,51 @@ export default function AdminLive() {
                                      <p className="text-[10px] text-gray-400 font-bold">{mission.driver_id ? mission.driver?.phone : 'Recherche...'}</p>
                                   </div>
                                </div>
-                               <ExternalLink className="w-4 h-4 text-gray-300" />
+                               {mission.status === 'pending' && !mission.driver_id ? (
+                                  <Dialog>
+                                    <DialogTrigger asChild>
+                                      <button className="text-[10px] px-3 py-1.5 bg-slate-900 text-white rounded-lg font-bold shadow-md hover:scale-105 active:scale-95 transition-all outline-none flex items-center gap-1">
+                                        <UserPlus className="w-3 h-3" /> Assigner
+                                      </button>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-md border-none shadow-premium rounded-[32px] p-6 bg-white overflow-hidden">
+                                      <DialogHeader>
+                                        <DialogTitle className="text-xl font-black text-slate-900">Assigner un Livreur</DialogTitle>
+                                        <p className="text-sm text-gray-500 font-medium">Sélectionnez un partenaire disponible pour la commande #{mission.id.slice(0, 8)}</p>
+                                      </DialogHeader>
+                                      <div className="space-y-4 mt-6 max-h-72 overflow-y-auto pr-2">
+                                        {drivers.length === 0 ? (
+                                          <p className="text-sm text-gray-400 font-bold text-center py-8 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-100">Aucun livreur vérifié disponible.</p>
+                                        ) : (
+                                          drivers.map(driver => (
+                                            <div key={driver.id} className="flex items-center justify-between p-4 bg-gray-50/50 rounded-2xl border border-gray-100 hover:bg-white hover:shadow-lg hover:border-brand-orange/20 transition-all group">
+                                              <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 bg-brand-orange/10 text-brand-orange rounded-xl flex items-center justify-center font-black">
+                                                  {driver.full_name?.charAt(0) || '?'}
+                                                </div>
+                                                <div>
+                                                  <p className="text-sm font-black text-slate-900">{driver.full_name}</p>
+                                                  <p className="text-[10px] text-gray-400 font-bold flex items-center gap-1">
+                                                    <Phone className="w-3 h-3" /> {driver.phone || 'Non renseigné'}
+                                                  </p>
+                                                </div>
+                                              </div>
+                                              <button 
+                                                disabled={assigningId === mission.id}
+                                                onClick={() => handleAssign(mission.id, driver.id)}
+                                                className="opacity-0 group-hover:opacity-100 px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-black shadow-lg transition-all hover:bg-brand-orange disabled:opacity-50"
+                                              >
+                                                Choisir
+                                              </button>
+                                            </div>
+                                          ))
+                                        )}
+                                      </div>
+                                    </DialogContent>
+                                  </Dialog>
+                               ) : (
+                                  <ExternalLink className="w-4 h-4 text-gray-300" />
+                               )}
                             </div>
                          </div>
                       </div>

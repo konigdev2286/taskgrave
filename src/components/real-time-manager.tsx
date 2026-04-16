@@ -41,10 +41,28 @@ export function RealTimeManager() {
   const addNotification = (notif: Omit<Notification, 'id'>, duration = 6000) => {
     const id = Math.random().toString(36).substring(2, 9)
     setNotifications(prev => [{ ...notif, id }, ...prev].slice(0, 5)) // max 5 visible
+
+    // Browser Notification
+    if (document.visibilityState === 'hidden') {
+      sendBrowserNotification(notif.title, notif.message)
+    }
+
     setTimeout(() => {
       setNotifications(prev => prev.filter(n => n.id !== id))
     }, duration)
   }
+
+  const sendBrowserNotification = (title: string, body: string) => {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification(title, { body, icon: '/icons/icon-192x192.png' })
+    }
+  }
+
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission()
+    }
+  }, [])
 
   const removeNotification = (id: string) => {
     setNotifications(prev => prev.filter(n => n.id !== id))
@@ -54,6 +72,7 @@ export function RealTimeManager() {
     let missionSub: any = null
     let profileSub: any = null
     let newUserSub: any = null
+    let chatSub: any = null
 
     async function setupSubscriptions() {
       const { data: { user } } = await supabase.auth.getUser()
@@ -188,6 +207,31 @@ export function RealTimeManager() {
           })
           .subscribe()
       }
+
+      // ── CHAT subscription ──────────────────────────────────
+      chatSub = supabase
+        .channel('rtm-chat')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
+          const msg = payload.new as any
+          if (msg.sender_id !== user.id) {
+            // Check if user is part of the mission
+            supabase.from('missions')
+              .select('id')
+              .eq('id', msg.mission_id)
+              .or(`client_id.eq.${user.id},driver_id.eq.${user.id}`)
+              .single()
+              .then(({ data }) => {
+                if (data) {
+                  addNotification({
+                    title: '💬 Nouveau Message',
+                    message: msg.content.length > 50 ? msg.content.substring(0, 50) + '...' : msg.content,
+                    type: 'info'
+                  })
+                }
+              })
+          }
+        })
+        .subscribe()
     }
 
     setupSubscriptions()
@@ -196,6 +240,7 @@ export function RealTimeManager() {
       if (missionSub) supabase.removeChannel(missionSub)
       if (profileSub) supabase.removeChannel(profileSub)
       if (newUserSub) supabase.removeChannel(newUserSub)
+      if (chatSub) supabase.removeChannel(chatSub)
     }
   }, [])
 

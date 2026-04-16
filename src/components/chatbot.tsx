@@ -29,7 +29,10 @@ export default function Chatbot({ asNavbarItem = false }: { asNavbarItem?: boole
         body: JSON.stringify({ messages: [...messages, userMessage] })
       })
 
-      if (!response.ok) throw new Error("API error")
+      if (!response.ok) {
+        console.error("Chat API error status:", response.status);
+        throw new Error("API error");
+      }
 
       const data = await response.json()
       setMessages(prev => [...prev, { role: 'bot', text: data.text }])

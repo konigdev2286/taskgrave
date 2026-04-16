@@ -10,7 +10,10 @@ import {
   History, 
   Settings,
   PlusCircle,
-  Menu
+  Menu,
+  MessageCircle,
+  ShieldCheck,
+  BarChart3
 } from "lucide-react"
 
 export function MobileNav({ role }: { role: 'client' | 'driver' | 'admin' }) {
@@ -18,26 +21,26 @@ export function MobileNav({ role }: { role: 'client' | 'driver' | 'admin' }) {
 
   const clientLinks = [
     { name: "Accueil", href: "/client", icon: LayoutDashboard },
-    { name: "Missions", href: "/client/historique", icon: History },
+    { name: "Chat", href: "/client/chat", icon: MessageCircle },
     { name: "Commander", href: "/client/commander", icon: PlusCircle, primary: true },
     { name: "Suivi", href: "/client/suivi", icon: MapPin },
-    { name: "Plus", href: "/client/parametres", icon: Menu },
+    { name: "Missions", href: "/client/historique", icon: History },
   ]
 
   const driverLinks = [
     { name: "Dashboard", href: "/driver", icon: LayoutDashboard },
-    { name: "Missions", href: "/driver/missions", icon: Package },
+    { name: "Chat", href: "/driver/chat", icon: MessageCircle },
     { name: "Active", href: "/driver/mission-active", icon: MapPin, primary: true },
-    { name: "Portefeuille", href: "/driver/portefeuille", icon: History },
-    { name: "Plus", href: "/driver/profil", icon: Menu },
+    { name: "Argent", href: "/driver/portefeuille", icon: History },
+    { name: "Profil", href: "/driver/profil", icon: Menu },
   ]
 
   const adminLinks = [
     { name: "Admin", href: "/admin", icon: LayoutDashboard },
-    { name: "Livreurs", href: "/admin/livreurs", icon: Package },
-    { name: "Vérifier", href: "/admin/verifications", icon: Menu, primary: true },
-    { name: "Stats", href: "/admin", icon: History },
-    { name: "Paramètres", href: "/admin", icon: Settings },
+    { name: "Chat", href: "/admin/support", icon: MessageCircle },
+    { name: "Vérifier", href: "/admin/verifications", icon: ShieldCheck, primary: true },
+    { name: "Stats", href: "/admin/rapports", icon: BarChart3 },
+    { name: "Param", href: "/admin/parametres", icon: Settings },
   ]
 
   const links = role === 'admin' ? adminLinks : role === 'driver' ? driverLinks : clientLinks

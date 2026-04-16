@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Users, Truck, DollarSign, TrendingUp, AlertTriangle, ChevronRight, BarChart3, Package, Loader2, ShieldCheck, Clock, RefreshCw, Zap } from "lucide-react"
 import { motion } from "framer-motion"
 import { useAdminStats } from "@/hooks/use-supabase"
+import Link from "next/link"
 
 const STATUS_TRANSLATE: Record<string, { label: string; color: string; dot: string }> = {
   pending:   { label: 'En attente',  color: 'text-red-500',      dot: 'bg-red-500 animate-pulse' },
@@ -53,6 +54,7 @@ export default function AdminDashboard() {
       bg: "bg-purple-50",
       badge: `${stats.pendingMissions} en attente`,
       badgeColor: stats.pendingMissions > 0 ? "bg-red-50 text-red-500" : "bg-purple-50 text-purple-600",
+      href: "/admin/live"
     },
   ]
 
@@ -89,27 +91,29 @@ export default function AdminDashboard() {
 
       {/* KPI Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {kpis.map((kpi, i) => (
+        {kpis.map((kpi: any, i) => (
           <motion.div
             key={i}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.08 }}
           >
-            <Card className="border-none shadow-premium bg-white rounded-[32px]">
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div className={`${kpi.bg} p-4 rounded-2xl`}>
-                    <kpi.icon className={`w-7 h-7 ${kpi.color}`} />
+            <Link href={kpi.href || '#'}>
+              <Card className="border-none shadow-premium bg-white rounded-[32px] hover:scale-[1.02] transition-transform cursor-pointer">
+                <CardContent className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className={`${kpi.bg} p-4 rounded-2xl`}>
+                      <kpi.icon className={`w-7 h-7 ${kpi.color}`} />
+                    </div>
+                    <span className={`text-[10px] font-black px-3 py-1 rounded-full ${kpi.badgeColor}`}>
+                      {kpi.badge}
+                    </span>
                   </div>
-                  <span className={`text-[10px] font-black px-3 py-1 rounded-full ${kpi.badgeColor}`}>
-                    {kpi.badge}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-400 font-black uppercase tracking-widest leading-none mb-2">{kpi.label}</p>
-                <p className="text-2xl font-black text-slate-900 leading-tight">{kpi.value}</p>
-              </CardContent>
-            </Card>
+                  <p className="text-xs text-gray-400 font-black uppercase tracking-widest leading-none mb-2">{kpi.label}</p>
+                  <p className="text-2xl font-black text-slate-900 leading-tight">{kpi.value}</p>
+                </CardContent>
+              </Card>
+            </Link>
           </motion.div>
         ))}
       </div>
@@ -125,40 +129,42 @@ export default function AdminDashboard() {
                   {recentMissions.length} missions récentes • Temps réel
                 </CardDescription>
               </div>
-              <span className="flex items-center gap-2 text-[10px] font-black text-green-500 uppercase tracking-widest">
-                <Zap className="w-3 h-3" /> Live
-              </span>
+              <Link href="/admin/live">
+                <Button variant="ghost" className="text-brand-blue font-black text-[10px] uppercase tracking-widest flex gap-2">
+                  Voir live monitor <ChevronRight className="w-4 h-4" />
+                </Button>
+              </Link>
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-gray-50">
                 {recentMissions.length > 0 ? recentMissions.map((mission) => {
                   const s = STATUS_TRANSLATE[mission.status] || { label: mission.status, color: 'text-gray-400', dot: 'bg-gray-300' }
                   return (
-                    <div key={mission.id} className="p-6 flex items-center justify-between hover:bg-gray-50/20 transition-all group">
-                      <div className="flex items-center gap-5">
-                        <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${s.dot}`} />
-                        <div>
-                          <p className="text-sm font-black text-slate-900 leading-none mb-1">
-                            #{mission.id.slice(0, 8).toUpperCase()} <span className="text-gray-400 font-bold">•</span> <span className="uppercase">{mission.type}</span>
-                          </p>
-                          <p className="text-xs text-gray-400 font-bold tracking-tight">
-                            {mission.client?.full_name || 'Client Inconnu'} → {mission.driver?.full_name || 'Non assigné'}
-                          </p>
+                    <Link key={mission.id} href={`/admin/live?id=${mission.id}`}>
+                      <div className="p-6 flex items-center justify-between hover:bg-gray-50/20 transition-all group cursor-pointer">
+                        <div className="flex items-center gap-5">
+                          <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${s.dot}`} />
+                          <div>
+                            <p className="text-sm font-black text-slate-900 leading-none mb-1">
+                              #{mission.id.slice(0, 8).toUpperCase()} <span className="text-gray-400 font-bold">•</span> <span className="uppercase">{mission.type}</span>
+                            </p>
+                            <p className="text-xs text-gray-400 font-bold tracking-tight">
+                              {mission.client?.full_name || 'Client Inconnu'} → {mission.driver?.full_name || 'Non assigné'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-6">
+                          <div className="text-right">
+                            <p className={`text-[10px] font-black uppercase tracking-widest ${s.color}`}>{s.label}</p>
+                            <p className="text-xs text-gray-400 font-bold">
+                              {new Date(mission.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
+                          <p className="text-sm font-black text-slate-900">{(mission.price_fcfa || 0).toLocaleString()} <span className="text-[10px] text-gray-400">FCFA</span></p>
+                          <ChevronRight className="w-5 h-5 text-gray-200 group-hover:text-brand-blue group-hover:translate-x-1 transition-all" />
                         </div>
                       </div>
-                      <div className="flex items-center gap-6">
-                        <div className="text-right">
-                          <p className={`text-[10px] font-black uppercase tracking-widest ${s.color}`}>{s.label}</p>
-                          <p className="text-xs text-gray-400 font-bold">
-                            {new Date(mission.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                          </p>
-                        </div>
-                        <p className="text-sm font-black text-slate-900">{(mission.price_fcfa || 0).toLocaleString()} <span className="text-[10px] text-gray-400">FCFA</span></p>
-                        <Button variant="ghost" size="icon" className="text-gray-200 group-hover:text-brand-blue group-hover:translate-x-1 transition-all">
-                          <ChevronRight className="w-5 h-5" />
-                        </Button>
-                      </div>
-                    </div>
+                    </Link>
                   )
                 }) : (
                   <div className="p-16 text-center">

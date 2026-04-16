@@ -79,16 +79,18 @@ export default function ClientDashboard() {
 
       {/* Grid de Cartes de Stats rapides */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="border-none shadow-premium bg-white p-6 overflow-hidden relative group">
-           <div className="relative z-10">
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Livraisons en cours</p>
-              <h3 className="text-3xl font-black text-brand-blue">{missionsLoading ? '...' : missions.filter(m => m.status !== 'delivered' && m.status !== 'cancelled').length}</h3>
-              <Link href="/client/suivi" className="inline-flex items-center text-[10px] font-black text-brand-blue mt-4 hover:underline uppercase tracking-tighter">
-                 Suivre en temps réel <ChevronRight className="w-3 h-3 ml-1" />
-              </Link>
-           </div>
-           <Package className="absolute -bottom-4 -right-4 w-24 h-24 text-blue-50 group-hover:scale-110 transition-transform" />
-        </Card>
+        <Link href="/client/suivi" className="block">
+          <Card className="border-none shadow-premium bg-white p-6 overflow-hidden relative group cursor-pointer hover:scale-[1.02] transition-transform">
+             <div className="relative z-10">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Livraisons en cours</p>
+                <h3 className="text-3xl font-black text-brand-blue">{missionsLoading ? '...' : missions.filter(m => m.status !== 'delivered' && m.status !== 'cancelled').length}</h3>
+                <p className="inline-flex items-center text-[10px] font-black text-brand-blue mt-4 uppercase tracking-tighter">
+                   Suivre en temps réel <ChevronRight className="w-3 h-3 ml-1" />
+                </p>
+             </div>
+             <Package className="absolute -bottom-4 -right-4 w-24 h-24 text-blue-50 group-hover:scale-110 transition-transform" />
+          </Card>
+        </Link>
 
         <Card className="border-none shadow-premium bg-white p-6 overflow-hidden relative group">
            <div className="relative z-10">
@@ -101,16 +103,18 @@ export default function ClientDashboard() {
            <Gift className="absolute -bottom-4 -right-4 w-24 h-24 text-orange-50 group-hover:scale-110 transition-transform" />
         </Card>
 
-        <Card className="border-none shadow-slate-200 shadow-xl bg-slate-900 text-white p-6 overflow-hidden relative group">
-           <div className="relative z-10">
-              <p className="text-[10px] font-black opacity-40 uppercase tracking-widest mb-1">Missions Terminées</p>
-              <h3 className="text-3xl font-black">{missionsLoading ? '...' : missions.filter(m => m.status === 'delivered').length}</h3>
-              <Link href="/client/historique" className="inline-flex items-center text-[10px] font-black text-brand-orange mt-4 hover:underline uppercase tracking-tighter">
-                 Voir l'historique <ChevronRight className="w-3 h-3 ml-1" />
-              </Link>
-           </div>
-           <TrendingUp className="absolute -bottom-4 -right-4 w-24 h-24 text-white/5 group-hover:scale-110 transition-transform" />
-        </Card>
+        <Link href="/client/historique" className="block">
+          <Card className="border-none shadow-slate-200 shadow-xl bg-slate-900 text-white p-6 overflow-hidden relative group cursor-pointer hover:scale-[1.02] transition-transform">
+             <div className="relative z-10">
+                <p className="text-[10px] font-black opacity-40 uppercase tracking-widest mb-1">Missions Terminées</p>
+                <h3 className="text-3xl font-black">{missionsLoading ? '...' : missions.filter(m => m.status === 'delivered').length}</h3>
+                <p className="inline-flex items-center text-[10px] font-black text-brand-orange mt-4 uppercase tracking-tighter">
+                   Voir l'historique <ChevronRight className="w-3 h-3 ml-1" />
+                </p>
+             </div>
+             <TrendingUp className="absolute -bottom-4 -right-4 w-24 h-24 text-white/5 group-hover:scale-110 transition-transform" />
+          </Card>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -138,34 +142,36 @@ export default function ClientDashboard() {
               ) : (
                  missions.slice(0, 3).map((mission, i) => (
                     <motion.div key={mission.id} variants={itemVariants}>
-                       <Card className="border border-gray-50 shadow-sm bg-white hover:border-brand-blue/20 transition-all cursor-pointer group">
-                          <CardContent className="p-6 flex items-center justify-between">
-                             <div className="flex items-center gap-6">
-                                <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center text-brand-blue group-hover:bg-blue-50 transition-colors">
-                                   <Truck className="w-6 h-6" />
+                       <Link href={`/client/suivi?id=${mission.id}`}>
+                          <Card className="border border-gray-50 shadow-sm bg-white hover:border-brand-blue/20 transition-all cursor-pointer group">
+                             <CardContent className="p-6 flex items-center justify-between">
+                                <div className="flex items-center gap-6">
+                                   <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center text-brand-blue group-hover:bg-blue-50 transition-colors">
+                                      <Truck className="w-6 h-6" />
+                                   </div>
+                                   <div className="space-y-1">
+                                      <p className="font-bold text-slate-900">{mission.dest_address}</p>
+                                      <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">ID: {mission.id.slice(0,8)} • {mission.type}</p>
+                                    </div>
                                 </div>
-                                <div className="space-y-1">
-                                   <p className="font-bold text-slate-900">{mission.dest_address}</p>
-                                   <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">ID: {mission.id.slice(0,8)} • {mission.type}</p>
-                                 </div>
-                             </div>
-                             <div className="flex items-center gap-6">
-                                <div className="text-right">
-                                   <p className={`text-[10px] font-black uppercase tracking-widest ${
-                                      mission.status === 'delivered' ? 'text-green-600' : 
-                                      mission.status === 'pending' ? 'text-orange-500' : 'text-brand-blue animate-pulse'
-                                   }`}>
-                                      {mission.status === 'delivered' ? 'Terminé' : 
-                                       mission.status === 'pending' ? 'En attente' : 'En route'}
-                                   </p>
-                                   <p className="text-xs text-gray-400 font-medium">
-                                      {new Date(mission.created_at).toLocaleDateString('fr-FR')}
-                                   </p>
+                                <div className="flex items-center gap-6">
+                                   <div className="text-right">
+                                      <p className={`text-[10px] font-black uppercase tracking-widest ${
+                                         mission.status === 'delivered' ? 'text-green-600' : 
+                                         mission.status === 'pending' ? 'text-orange-500' : 'text-brand-blue animate-pulse'
+                                      }`}>
+                                         {mission.status === 'delivered' ? 'Terminé' : 
+                                          mission.status === 'pending' ? 'En attente' : 'En route'}
+                                      </p>
+                                      <p className="text-xs text-gray-400 font-medium">
+                                         {new Date(mission.created_at).toLocaleDateString('fr-FR')}
+                                      </p>
+                                   </div>
+                                   <ChevronRight className="w-5 h-5 text-gray-200 group-hover:text-brand-blue transition-colors" />
                                 </div>
-                                <ChevronRight className="w-5 h-5 text-gray-200 group-hover:text-brand-blue transition-colors" />
-                             </div>
-                          </CardContent>
-                       </Card>
+                             </CardContent>
+                          </Card>
+                       </Link>
                     </motion.div>
                  ))
               )}
@@ -179,7 +185,9 @@ export default function ClientDashboard() {
                  <Bot className="w-12 h-12 mb-6" />
                  <h3 className="text-2xl font-black mb-2 leading-tight">Besoin d'aide ?</h3>
                  <p className="text-blue-100 text-sm font-medium mb-8 leading-relaxed">Notre assistant intelligent est là 24h/24 pour répondre à vos questions sur vos livraisons.</p>
-                 <Button className="w-full bg-white text-brand-blue h-14 rounded-2xl font-black text-lg border-none shadow-lg hover:scale-[1.02] transition-transform">Démarrer le Chat</Button>
+                 <Link href="/client/chat">
+                    <Button className="w-full bg-white text-brand-blue h-14 rounded-2xl font-black text-lg border-none shadow-lg hover:scale-[1.02] transition-transform">Démarrer le Chat</Button>
+                 </Link>
               </div>
               <div className="absolute -bottom-10 -right-10 w-44 h-44 bg-white/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700" />
            </Card>

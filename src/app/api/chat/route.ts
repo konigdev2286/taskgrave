@@ -9,10 +9,11 @@ export async function POST(req: Request) {
     }
 
     const { messages } = await req.json();
+    console.log('Chat messages received:', messages.length);
 
     const genAI = new GoogleGenerativeAI(aiKey);
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',
       systemInstruction: `Tu es l'assistant de J'ARRIVE, une plateforme de logistique et de livraison basée à Brazzaville, au Congo. 
 Tu dois être professionnel, poli, clair et concis. 
 Tes capacités/règles :
@@ -44,6 +45,7 @@ Réponds de manière naturelle et courte (moins de 3 phrases en général).`
     const chat = model.startChat({ history });
     const result = await chat.sendMessage(lastMessage);
     const responseText = result.response.text();
+    console.log('Gemini responded successfully');
 
     return NextResponse.json({ text: responseText });
   } catch (error: any) {

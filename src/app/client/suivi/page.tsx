@@ -2,12 +2,14 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { MapPin, Truck, Phone, MessageCircle, Clock, CheckCircle2, Loader2, Package, Zap } from "lucide-react"
-import { motion } from "framer-motion"
+import { MapPin, Truck, Phone, MessageCircle, Clock, CheckCircle2, Loader2, Package, Zap, Star } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
+import { toast } from "sonner"
 import { useState, useEffect, useCallback } from "react"
 import { supabase } from "@/lib/supabase"
 import Link from "next/link"
 import dynamic from "next/dynamic"
+import { ChatDialog } from "@/components/chat-dialog"
 
 const TrackingMap = dynamic(
   () => import("@/components/tracking-map").then(m => m.TrackingMap),
@@ -34,6 +36,11 @@ export default function ClientSuiviPage() {
   const [loading, setLoading] = useState(true)
   const [allMissions, setAllMissions] = useState<any[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [hasReviewed, setHasReviewed] = useState(false)
+  const [showReviewModal, setShowReviewModal] = useState(false)
+  const [rating, setRating] = useState(5)
+  const [comment, setComment] = useState("")
+  const [submittingReview, setSubmittingReview] = useState(false)
 
   const fetchMissions = useCallback(async () => {
     try {
@@ -49,10 +56,28 @@ export default function ClientSuiviPage() {
 
       if (data && data.length > 0) {
         setAllMissions(data)
-        // Show most recent active mission, or first if all done
-        const active = data.find(m => !["delivered", "cancelled"].includes(m.status)) || data[0]
-        setMission(active)
-        setSelectedId(active.id)
+        
+        // Get mission from ID if in URL
+        const urlParams = new URLSearchParams(window.location.search)
+        const urlId = urlParams.get('id')
+        
+        const active = urlId ? data.find(m => m.id === urlId) : (data.find(m => !["delivered", "cancelled"].includes(m.status)) || data[0])
+        
+        if (active) {
+          setMission(active)
+          setSelectedId(active.id)
+          
+          // Check if reviewed if delivered
+          if (active.status === 'delivered') {
+            const { data: rev } = await supabase
+              .from('reviews')
+              .select('id')
+              .eq('mission_id', active.id)
+              .maybeSingle()
+            setHasReviewed(!!rev)
+            if (!rev) setShowReviewModal(true)
+          }
+        }
       }
     } catch (err) {
       console.error("Error fetching missions:", err)
@@ -84,9 +109,44 @@ export default function ClientSuiviPage() {
     return () => { supabase.removeChannel(sub) }
   }, [mission?.id])
 
-  const selectMission = (m: any) => {
+  const selectMission = async (m: any) => {
     setMission(m)
     setSelectedId(m.id)
+    if (m.status === 'delivered') {
+      const { data: rev } = await supabase
+        .from('reviews')
+        .select('id')
+        .eq('mission_id', m.id)
+        .maybeSingle()
+      setHasReviewed(!!rev)
+      if (!rev) setShowReviewModal(true)
+    } else {
+      setHasReviewed(false)
+      setShowReviewModal(false)
+    }
+  }
+
+  const submitReview = async () => {
+    if (!mission || !mission.driver_id) return
+    setSubmittingReview(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      const { error } = await supabase.from('reviews').insert({
+        mission_id: mission.id,
+        client_id: user?.id,
+        driver_id: mission.driver_id,
+        rating,
+        comment
+      })
+      if (error) throw error
+      toast.success("Merci pour votre avis !")
+      setHasReviewed(true)
+      setShowReviewModal(false)
+    } catch (err: any) {
+      toast.error(err.message)
+    } finally {
+      setSubmittingReview(false)
+    }
   }
 
   const currentStepIndex = STEPS.findIndex(s => s.id === mission?.status)
@@ -211,9 +271,16 @@ export default function ClientSuiviPage() {
                         </Button>
                       </a>
                     )}
-                    <Button variant="outline" className="h-11 flex gap-2 font-black text-brand-orange border-orange-100 bg-orange-50/50 hover:bg-orange-100 rounded-2xl uppercase text-[10px] tracking-widest">
-                      <MessageCircle className="w-4 h-4" /> Chat
-                    </Button>
+                    <ChatDialog 
+                      missionId={mission.id}
+                      currentUserId={mission.client_id}
+                      otherUserName={mission.driver.full_name || "Livreur"}
+                      trigger={
+                        <Button variant="outline" className="h-11 flex gap-2 font-black text-brand-orange border-orange-100 bg-orange-50/50 hover:bg-orange-100 rounded-2xl uppercase text-[10px] tracking-widest">
+                          <MessageCircle className="w-4 h-4" /> Chat
+                        </Button>
+                      }
+                    />
                   </div>
                 </div>
               ) : (
@@ -294,6 +361,64 @@ export default function ClientSuiviPage() {
           </Card>
         </aside>
       </div>
+
+      {/* Review Modal */}
+      <AnimatePresence>
+        {showReviewModal && mission?.status === 'delivered' && !hasReviewed && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-[40px] shadow-2xl w-full max-w-md overflow-hidden p-8"
+            >
+              <div className="text-center space-y-4">
+                <div className="w-20 h-20 bg-green-50 rounded-3xl flex items-center justify-center mx-auto text-green-500">
+                  <CheckCircle2 className="w-10 h-10" />
+                </div>
+                <h2 className="text-2xl font-black text-slate-900 leading-tight">Colis Livré ! 🎁</h2>
+                <p className="text-sm text-gray-500 font-medium">Comment s'est passée votre livraison avec {mission.driver?.full_name || 'votre livreur'} ?</p>
+                
+                <div className="flex justify-center gap-2 py-4">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <button 
+                      key={s} 
+                      onClick={() => setRating(s)}
+                      className="transition-transform active:scale-90"
+                    >
+                      <Star className={`w-10 h-10 ${rating >= s ? 'text-yellow-400 fill-current' : 'text-gray-200'}`} />
+                    </button>
+                  ))}
+                </div>
+
+                <textarea
+                  placeholder="Laissez un petit commentaire (optionnel)..."
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  className="w-full bg-gray-50 border-none rounded-2xl p-4 text-sm font-medium focus:ring-2 focus:ring-brand-blue/20 min-h-[100px] resize-none"
+                />
+
+                <div className="grid grid-cols-2 gap-3 pt-4">
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => setShowReviewModal(false)}
+                    className="rounded-2xl font-bold text-gray-400 h-14"
+                  >
+                    Plus tard
+                  </Button>
+                  <Button 
+                    onClick={submitReview}
+                    disabled={submittingReview}
+                    className="bg-brand-blue hover:bg-brand-blue-dark text-white font-black rounded-2xl h-14 shadow-lg shadow-brand-blue/20"
+                  >
+                    {submittingReview ? <Loader2 className="w-5 h-5 animate-spin" /> : "Envoyer"}
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

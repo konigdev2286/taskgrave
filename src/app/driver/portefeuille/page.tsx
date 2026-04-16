@@ -6,6 +6,7 @@ import { Wallet, ArrowDownRight, ArrowUpRight, Clock, Plus, Smartphone, History,
 import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
+import { toast } from "sonner"
 
 type Transaction = {
   id: string
@@ -22,6 +23,7 @@ export default function PortefeuillePage() {
   const [weekRevenue, setWeekRevenue] = useState(0)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
+  const [requesting, setRequesting] = useState(false)
 
   useEffect(() => {
     fetchWallet()
@@ -95,6 +97,42 @@ export default function PortefeuillePage() {
     } finally {
       setLoading(false)
     }
+  const handleWithdrawal = async () => {
+    if (balance < 1000) {
+      toast.error("Le solde minimum pour un retrait est de 1,000 FCFA")
+      return
+    }
+
+    setRequesting(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data: profile } = await supabase.from('profiles').select('phone').eq('id', user.id).single()
+      
+      if (!profile?.phone) {
+        toast.error("Veuillez configurer votre numéro MoMo dans 'Mon Profil' avant de retirer.")
+        return
+      }
+
+      const { error } = await supabase
+        .from('withdrawals')
+        .insert({
+          driver_id: user.id,
+          amount: balance, 
+          phone_momo: profile.phone,
+          status: 'pending'
+        })
+
+      if (error) throw error
+
+      toast.success("Demande de retrait envoyée ! Elle sera traitée sous 24h.")
+      setBalance(0)
+    } catch (err: any) {
+      toast.error(err.message)
+    } finally {
+      setRequesting(false)
+    }
   }
 
   if (loading) {
@@ -139,8 +177,12 @@ export default function PortefeuillePage() {
               </div>
 
               <div className="mt-8">
-                 <Button disabled={balance < 1000} className="w-full bg-brand-orange hover:bg-brand-orange-dark h-14 font-black shadow-xl shadow-brand-orange/20 border-none transition-transform active:scale-95 disabled:opacity-50 disabled:active:scale-100">
-                   Retirer maintenant
+                 <Button 
+                   onClick={handleWithdrawal}
+                   disabled={balance < 1000 || requesting} 
+                   className="w-full bg-brand-orange hover:bg-brand-orange-dark h-14 font-black shadow-xl shadow-brand-orange/20 border-none transition-transform active:scale-95 disabled:opacity-50 disabled:active:scale-100"
+                 >
+                    {requesting ? <Loader2 className="w-5 h-5 animate-spin" /> : "Retirer maintenant"}
                  </Button>
               </div>
            </div>
