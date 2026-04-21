@@ -13,23 +13,29 @@ export async function POST(req: Request) {
 
     const genAI = new GoogleGenerativeAI(aiKey);
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-1.5-flash',
-      systemInstruction: `Tu es l'assistant de J'ARRIVE, une plateforme de logistique et de livraison au Congo-Brazzaville. Professionnel, poli, concis.
+      model: 'gemini-1.5-flash', // Fallback to flash-latest or gemini-pro if needed
+    });
+
+    const systemPrompt = `Tu es l'assistant de J'ARRIVE, une plateforme de logistique et de livraison au Congo-Brazzaville. Professionnel, poli, concis.
 Services : livraison colis/repas, gaz, déménagement, stockage.
 Paiement : Cash ou MoMo à la livraison (ou via portefeuille client si approvisionné). 
 Abonnements Pro : Starter (30k/25 courses), Standard (80k/80 courses), Pro (200k/250 courses).
 Assistance : +242 06 621 73 95.
-Réponds en moins de 3 phrases. Si on demande "où est ma commande", renvoie vers la rubrique "Suivi".`,
-      safetySettings: [
-        { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
-        { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
-        { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
-        { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
-      ]
-    });
+Réponds en moins de 3 phrases. Si on demande "où est ma commande", renvoie vers la rubrique "Suivi".`;
 
     // Valid history for Gemini: must start with 'user' and alternate 'user'/'model'
     const history: any[] = [];
+    
+    // Insert system prompt as the first message context if history is empty
+    history.push({
+      role: 'user',
+      parts: [{ text: "CONSIGNE SYSTEME: " + systemPrompt + " . Réponds 'OK' si tu as compris." }]
+    });
+    history.push({
+        role: 'model',
+        parts: [{ text: "OK, j'ai compris. Je suis prêt à aider les clients de J'ARRIVE." }]
+    });
+
     let nextRole = 'user';
 
     for (let i = 0; i < messages.length - 1; i++) {
