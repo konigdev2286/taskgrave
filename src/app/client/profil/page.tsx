@@ -86,14 +86,14 @@ export default function ProfilPage() {
         <h1 className="text-3xl font-black text-slate-900 tracking-tight">Mon Profil</h1>
         <div className="flex gap-2">
            <Button 
-            variant={!isPro ? "default" : "outline"} 
+            variant={!isPro ? "primary" : "outline"} 
             onClick={() => setIsPro(false)}
             className={!isPro ? "bg-brand-blue text-white font-bold" : "border-gray-200 text-slate-600 font-bold"}
            >
              Particulier
            </Button>
            <Button 
-            variant={isPro ? "default" : "outline"} 
+            variant={isPro ? "primary" : "outline"} 
             onClick={() => setIsPro(true)}
             className={isPro ? "bg-brand-orange text-white font-bold" : "border-gray-200 text-slate-600 font-bold"}
            >
