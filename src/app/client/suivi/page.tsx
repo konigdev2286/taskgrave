@@ -221,7 +221,7 @@ export default function ClientSuiviPage() {
       <div className="flex flex-col lg:flex-row gap-6 min-h-[550px]">
 
         {/* MAP */}
-        <div className="flex-1 rounded-[32px] overflow-hidden shadow-premium min-h-[380px] relative">
+        <div className="flex-1 rounded-[32px] overflow-hidden shadow-premium h-[420px] md:min-h-[450px] relative">
           <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-slate-900/80 backdrop-blur text-white px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/10">
             <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-ping" />
             Live

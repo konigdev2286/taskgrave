@@ -151,13 +151,16 @@ export default function AdminLive() {
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.98 }}
-            className="h-[600px] rounded-[40px] overflow-hidden shadow-premium border-4 border-white"
+            className="h-[450px] md:h-[650px] rounded-[40px] overflow-hidden shadow-premium border-4 border-white relative"
           >
-             {/* Note: This simplified map shows the most recent active mission, 
-                 In a full impl, we would loop over all active missions inside TrackingMap or similar */}
+             {/* Note: This simplified map shows the most recent active mission */}
              <TrackingMap 
                 originAddress={missions[0]?.origin_address}
                 destAddress={missions[0]?.dest_address}
+                originLat={missions[0]?.origin_lat}
+                originLng={missions[0]?.origin_lng}
+                destLat={missions[0]?.dest_lat}
+                destLng={missions[0]?.dest_lng}
                 status={missions[0]?.status}
              />
           </motion.div>

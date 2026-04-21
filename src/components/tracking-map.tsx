@@ -186,12 +186,14 @@ export function TrackingMap({
   }
 
   return (
-    <div className="relative w-full h-full rounded-[32px] overflow-hidden bg-slate-100 z-0">
+    <div className="relative w-full h-[350px] md:h-full rounded-[32px] overflow-hidden bg-slate-100 z-0 border border-gray-100 shadow-inner">
       <MapContainer 
         center={originCoords || BRAZZAVILLE_CENTER} 
         zoom={13} 
         scrollWheelZoom={false}
         className="w-full h-full z-0"
+        dragging={true}
+        tap={true}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -202,7 +204,7 @@ export function TrackingMap({
 
         {/* The Route Polyline */}
         {routePath.length > 0 && (
-          <Polyline positions={routePath} pathOptions={{ color: '#2563eb', weight: 5, opacity: 0.8 }} />
+          <Polyline positions={routePath} pathOptions={{ color: '#2563eb', weight: 5, opacity: 0.8, lineJoin: 'round' }} />
         )}
 
         {/* Origin Marker */}
