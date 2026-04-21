@@ -121,10 +121,14 @@ export default function PortefeuillePage() {
           status: 'pending'
         })
 
-      if (error) throw error
+      const { error: balanceErr } = await supabase
+        .from('profiles')
+        .update({ balance: 0 })
+        .eq('id', user.id)
+
+      if (balanceErr) throw balanceErr
 
       toast.success("Demande de retrait envoyée ! Elle sera traitée sous 24h.")
-      setBalance(0)
     } catch (err: any) {
       toast.error(err.message)
     } finally {
