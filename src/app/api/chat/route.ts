@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
 import { NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase';
 
 export async function POST(req: Request) {
   try {
@@ -9,22 +10,28 @@ export async function POST(req: Request) {
     }
 
     const { messages } = await req.json();
-    const lastMessage = (messages[messages.length - 1].text || "").toLowerCase();
+    const userMessage = (messages[messages.length - 1].text || "").toLowerCase();
 
-    // SIMPLE LOCAL FALLBACK (FREE & INSTANT)
-    if (lastMessage.includes("prix") || lastMessage.includes("tarif") || lastMessage.includes("coûte")) {
-      return NextResponse.json({ text: "Nos tarifs Pros commencent à 30 000 FCFA/mois (Pack Starter). Pour les particuliers, le prix dépend de la course. Consultez la page 'Tarifs' pour plus de détails." });
-    }
-    if (lastMessage.includes("suivi") || lastMessage.includes("où est") || lastMessage.includes("commande")) {
-      return NextResponse.json({ text: "Vous pouvez suivre votre colis en temps réel dans la rubrique 'Suivi' de votre espace client." });
-    }
-    if (lastMessage.includes("gaz")) {
-      return NextResponse.json({ text: "Nous livrons toutes les bouteilles de gaz à domicile. Payez simplement à la livraison !" });
+    // 1. Check Custom Knowledge Base (Manual "Coding" via Admin)
+    try {
+      const { data: knowledge } = await supabase
+        .from('bot_knowledge')
+        .select('keywords, response');
+
+      if (knowledge) {
+        const match = knowledge.find(k => 
+          k.keywords.some((kw: string) => userMessage.includes(kw.toLowerCase()))
+        );
+        if (match) {
+          return NextResponse.json({ text: match.response });
+        }
+      }
+    } catch (dbError) {
+      console.warn('[ChatAPI] Knowledge Base unavailable:', dbError);
+      // Fallback to AI if DB fails
     }
 
-    const genAI = new GoogleGenerativeAI(aiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
+    // 2. Fallback to Gemini AI if no manual match
     const systemPrompt = `Tu es l'Expert Client J'ARRIVE Logistique (Congo). 
     Ton identité : Professionnel, expert local, chaleureux.
     
@@ -47,27 +54,10 @@ export async function POST(req: Request) {
        - 100kg+ : Sur devis.
     
     RÈGLES IMPORTANTES :
-    - Paiement : CASH à la livraison uniquement.
-    - Contact : +242 06 621 73 95.
-    - Style : Répondre avec emojis (🚚, ⛽, 📦). Très court.`;
+       - Paiement : CASH à la livraison uniquement.
+       - Contact : +242 06 621 73 95.
+       - Style : Répondre avec emojis (🚚, ⛽, 📦). Très court.`;
 
-    const userMessage = messages[messages.length - 1].text.toLowerCase();
-
-    // 1. Check Custom Knowledge Base (Manual "Coding")
-    const { data: knowledge } = await supabase
-      .from('bot_knowledge')
-      .select('keywords, response');
-
-    if (knowledge) {
-      const match = knowledge.find(k => 
-        k.keywords.some((kw: string) => userMessage.includes(kw.toLowerCase()))
-      );
-      if (match) {
-        return NextResponse.json({ text: match.response });
-      }
-    }
-
-    // 2. Fallback to Gemini AI if no manual match
     const genAI = new GoogleGenerativeAI(aiKey);
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
