@@ -18,6 +18,11 @@ export const metadata: Metadata = {
   title: "J'ARRIVE Logistique",
   description: "Livraison rapide et sécurisée au Congo",
   manifest: "/manifest.json",
+  other: {
+    "mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-status-bar-style": "default",
+    "format-detection": "telephone=no",
+  }
 };
 
 export default function RootLayout({
@@ -31,6 +36,10 @@ export default function RootLayout({
       className="h-full antialiased light"
       style={{ colorScheme: 'light' }}
     >
+      <head>
+        <link rel="dns-prefetch" href="https://techsungas.supabase.co" />
+        <link rel="preconnect" href="https://techsungas.supabase.co" />
+      </head>
       <body className="min-h-full flex flex-col bg-white text-slate-900">
         <Toaster position="top-center" richColors />
         <RealTimeManager />
