@@ -14,49 +14,50 @@ export async function POST(req: Request) {
     const genAI = new GoogleGenerativeAI(aiKey);
     const model = genAI.getGenerativeModel({ 
       model: 'gemini-1.5-flash',
-      systemInstruction: `Tu es l'assistant de J'ARRIVE, une plateforme de logistique et de livraison basée à Brazzaville, au Congo. 
-Tu dois être professionnel, poli, clair et concis. 
-Tes capacités/règles :
-- L'entreprise s'occupe de la livraison à domicile, du stockage de marchandises, des déménagements, et de l'achat & livraison de gaz.
-- Tous les paiements se font en "Paiement sur place" (en espèces) lors de la livraison.
-- Les clients particuliers paient par course.
-- Il y a aussi des abonnements Pros : Pack starter (30 000 FCFA/mois pour 25 livraisons), Pack standard (80 000 FCFA/mois pour 80 livraisons), Pack pro (200 000 FCFA/mois pour 250 livraisons).
-- Ton but est d'aider les utilisateurs avec courtoisie.
-- Si on te demande où est une commande, dis au client de se référer à la page "Suivi" dans son espace client.
-- L'assistance téléphonique est joignable au +242 06 621 73 95.
-Réponds de manière naturelle et courte (moins de 3 phrases en général).`
+      systemInstruction: `Tu es l'assistant de J'ARRIVE, une plateforme de logistique et de livraison au Congo-Brazzaville. Professionnel, poli, concis.
+Services : livraison colis/repas, gaz, déménagement, stockage.
+Paiement : Cash ou MoMo à la livraison (ou via portefeuille client si approvisionné). 
+Abonnements Pro : Starter (30k/25 courses), Standard (80k/80 courses), Pro (200k/250 courses).
+Assistance : +242 06 621 73 95.
+Réponds en moins de 3 phrases. Si on demande "où est ma commande", renvoie vers la rubrique "Suivi".`,
+      safetySettings: [
+        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+      ]
     });
 
-    // Format and clean history for Gemini (must alternate user/model)
-    const history = messages
-      .slice(0, -1) // All messages except the last one
-      .filter((msg: any) => msg.role === 'user' || msg.role === 'bot') // Only valid roles
-      .map((msg: any) => ({
-        role: msg.role === 'bot' ? 'model' : 'user',
-        parts: [{ text: msg.text || "" }]
-      }))
-      .filter((msg: any, index: number, self: any[]) => {
-        // Ensure alternation: first message must be 'user', and no two same roles in a row
-        if (index === 0 && msg.role !== 'user') return false;
-        if (index > 0 && msg.role === self[index - 1].role) return false;
-        return true;
-      });
+    // Valid history for Gemini: must start with 'user' and alternate 'user'/'model'
+    const history: any[] = [];
+    let nextRole = 'user';
+
+    for (let i = 0; i < messages.length - 1; i++) {
+      const msg = messages[i];
+      const geminiRole = msg.role === 'bot' ? 'model' : 'user';
+      
+      if (geminiRole === nextRole) {
+        history.push({
+          role: geminiRole,
+          parts: [{ text: msg.text || "" }]
+        });
+        nextRole = geminiRole === 'user' ? 'model' : 'user';
+      }
+    }
     
-    const lastMessage = messages[messages.length - 1].text;
+    console.log('[ChatAPI] Cleaned history length:', history.length);
 
-    const chat = model.startChat({ 
-      history: history.length > 0 ? history : undefined 
-    });
+    const lastMessage = messages[messages.length - 1].text;
+    const chat = model.startChat({ history });
     
     const result = await chat.sendMessage(lastMessage);
     const responseText = result.response.text();
-    console.log('[ChatAPI] Gemini success');
-
+    
     return NextResponse.json({ text: responseText });
   } catch (error: any) {
-    console.error('[ChatAPI] Gemini generic error:', error.message || error);
+    console.error('[ChatAPI] Gemini error:', error.message || error);
     return NextResponse.json({ 
-      error: 'Une erreur est survenue avec l\'intelligence artificielle.',
+      error: 'Erreur technique',
       details: error.message 
     }, { status: 500 });
   }
