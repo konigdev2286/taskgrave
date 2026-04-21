@@ -67,9 +67,9 @@ export default function Chatbot({ asNavbarItem = false }: { asNavbarItem?: boole
       ) : (
         <button 
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-8 right-8 w-16 h-16 bg-brand-blue text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50 border-4 border-white"
+          className="fixed bottom-24 right-6 lg:bottom-8 lg:right-8 w-14 h-14 lg:w-16 lg:h-16 bg-brand-blue text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50 border-4 border-white"
         >
-          <MessageSquare className="w-8 h-8" />
+          <MessageSquare className="w-6 h-6 lg:w-8 lg:h-8" />
           <span className="absolute -top-1 -right-1 w-5 h-5 bg-brand-orange rounded-full flex items-center justify-center text-[10px] font-bold">1</span>
         </button>
       )}
@@ -80,7 +80,7 @@ export default function Chatbot({ asNavbarItem = false }: { asNavbarItem?: boole
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="fixed bottom-28 right-8 w-96 h-[500px] bg-white rounded-3xl shadow-premium z-50 flex flex-col overflow-hidden border border-gray-100"
+            className="fixed bottom-24 right-4 lg:bottom-28 lg:right-8 w-[calc(100%-32px)] md:w-96 h-[500px] max-h-[80vh] bg-white rounded-3xl shadow-premium z-50 flex flex-col overflow-hidden border border-gray-100"
           >
             <div className="p-4 bg-brand-blue text-white flex justify-between items-center">
                <div className="flex items-center gap-3">
