@@ -16,7 +16,8 @@ import {
   FileText,
   DollarSign,
   AlertTriangle,
-  MessageSquare
+  MessageSquare,
+  Bot
 } from "lucide-react"
 
 const adminLinks = [
@@ -48,6 +49,7 @@ export default function AdminSidebar() {
     { name: "Vue d'ensemble", href: "/admin", icon: LayoutDashboard },
     { name: "Utilisateurs", href: "/admin/utilisateurs", icon: Users },
     { name: "Flotte Livreurs", href: "/admin/livreurs", icon: Truck },
+    { name: "Cerveau Bot", href: "/admin/bot", icon: Bot },
     { name: "Supervision Live", href: "/admin/live", icon: MapIcon },
     { name: "Support Client", href: "/admin/support", icon: MessageSquare },
     { name: "Finances", href: "/admin/finances", icon: DollarSign },

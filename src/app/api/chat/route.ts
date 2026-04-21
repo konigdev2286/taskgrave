@@ -51,7 +51,26 @@ export async function POST(req: Request) {
     - Contact : +242 06 621 73 95.
     - Style : Répondre avec emojis (🚚, ⛽, 📦). Très court.`;
 
-    const userMessage = messages[messages.length - 1].text;
+    const userMessage = messages[messages.length - 1].text.toLowerCase();
+
+    // 1. Check Custom Knowledge Base (Manual "Coding")
+    const { data: knowledge } = await supabase
+      .from('bot_knowledge')
+      .select('keywords, response');
+
+    if (knowledge) {
+      const match = knowledge.find(k => 
+        k.keywords.some((kw: string) => userMessage.includes(kw.toLowerCase()))
+      );
+      if (match) {
+        return NextResponse.json({ text: match.response });
+      }
+    }
+
+    // 2. Fallback to Gemini AI if no manual match
+    const genAI = new GoogleGenerativeAI(aiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
     const finalPrompt = `${systemPrompt}\n\nClient: ${userMessage}\nAssistant:`;
 
     const result = await model.generateContent(finalPrompt);
