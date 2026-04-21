@@ -36,13 +36,23 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        if (response && response.status === 200) {
+        if (response && response.status === 200 && response.type === 'basic') {
           const resClone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, resClone));
         }
         return response;
       })
-      .catch(() => caches.match(event.request))
+      .catch(async () => {
+        const cachedResponse = await caches.match(event.request);
+        if (cachedResponse) return cachedResponse;
+        
+        // Final fallback to avoid "Failed to convert value to Response"
+        return new Response("Network error", { 
+          status: 408, 
+          statusText: "Network error",
+          headers: new Headers({ 'Content-Type': 'text/plain' }) 
+        });
+      })
   );
 });
 

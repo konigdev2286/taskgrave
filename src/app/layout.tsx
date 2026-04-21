@@ -38,8 +38,8 @@ export default function RootLayout({
       style={{ colorScheme: 'light' }}
     >
       <head>
-        <link rel="dns-prefetch" href="https://techsungas.supabase.co" />
-        <link rel="preconnect" href="https://techsungas.supabase.co" />
+        <link rel="dns-prefetch" href="https://kbrokfbqlgrhzuicblkv.supabase.co" />
+        <link rel="preconnect" href="https://kbrokfbqlgrhzuicblkv.supabase.co" />
       </head>
       <body className="min-h-full flex flex-col bg-white text-slate-900">
         <Toaster position="top-center" richColors />

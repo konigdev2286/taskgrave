@@ -209,8 +209,11 @@ export default function MissionActive() {
 
       <div className="flex-1 flex flex-col lg:flex-row gap-8 min-h-0">
          {/* Live Map for Driver */}
-         <div className="flex-1 bg-white rounded-3xl relative overflow-hidden shadow-premium border border-gray-100">
-            <div className="absolute inset-0 bg-[url('https://maps.googleapis.com/maps/api/staticmap?center=Brazzaville,Congo&zoom=15&size=800x800&scale=2')] bg-cover opacity-40 grayscale-[0.5]" />
+         <div className="flex-1 bg-gray-100 rounded-3xl relative overflow-hidden shadow-premium border border-gray-100">
+            {/* OpenStreetMap Tile Layer (Free & Public) */}
+            <div className="absolute inset-0 bg-[url('https://tile.openstreetmap.org/15/248/301.png')] bg-cover opacity-30 grayscale-[0.5]" />
+            
+            <div className="absolute inset-0 bg-gradient-to-br from-brand-blue/5 to-transparent" />
             
             <svg className="absolute inset-0 w-full h-full">
                <motion.path
