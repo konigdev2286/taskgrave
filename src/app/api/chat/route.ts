@@ -27,29 +27,37 @@ Tes capacités/règles :
 Réponds de manière naturelle et courte (moins de 3 phrases en général).`
     });
 
-    // Format history for Gemini
-    let history = messages.slice(0, -1).map((msg: any) => ({
-      role: msg.role === 'bot' ? 'model' : 'user',
-      parts: [{ text: msg.text }]
-    }));
-
-    if (history.length > 0 && history[0].role === 'model') {
-      history = [
-        { role: 'user', parts: [{ text: 'Bonjour' }] },
-        ...history
-      ];
-    }
+    // Format and clean history for Gemini (must alternate user/model)
+    const history = messages
+      .slice(0, -1) // All messages except the last one
+      .filter((msg: any) => msg.role === 'user' || msg.role === 'bot') // Only valid roles
+      .map((msg: any) => ({
+        role: msg.role === 'bot' ? 'model' : 'user',
+        parts: [{ text: msg.text || "" }]
+      }))
+      .filter((msg: any, index: number, self: any[]) => {
+        // Ensure alternation: first message must be 'user', and no two same roles in a row
+        if (index === 0 && msg.role !== 'user') return false;
+        if (index > 0 && msg.role === self[index - 1].role) return false;
+        return true;
+      });
     
     const lastMessage = messages[messages.length - 1].text;
 
-    const chat = model.startChat({ history });
+    const chat = model.startChat({ 
+      history: history.length > 0 ? history : undefined 
+    });
+    
     const result = await chat.sendMessage(lastMessage);
     const responseText = result.response.text();
-    console.log('Gemini responded successfully');
+    console.log('[ChatAPI] Gemini success');
 
     return NextResponse.json({ text: responseText });
   } catch (error: any) {
-    console.error('Gemini error:', error);
-    return NextResponse.json({ error: 'Une erreur est survenue avec l\'intelligence artificielle.' }, { status: 500 });
+    console.error('[ChatAPI] Gemini generic error:', error.message || error);
+    return NextResponse.json({ 
+      error: 'Une erreur est survenue avec l\'intelligence artificielle.',
+      details: error.message 
+    }, { status: 500 });
   }
 }

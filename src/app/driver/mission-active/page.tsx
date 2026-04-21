@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { MapPin, Navigation, Phone, MessageSquare, CheckCircle2, ChevronLeft, Flag, Info, User, Loader2 } from "lucide-react"
+import { MapPin, Navigation, Phone, MessageSquare, CheckCircle2, ChevronLeft, Flag, Info, User, Loader2, Camera } from "lucide-react"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { useState, useEffect } from "react"
@@ -62,21 +62,64 @@ export default function MissionActive() {
     }
   }
 
+  const [proofFile, setProofFile] = useState<File | null>(null)
+  
+  const handleUploadProof = async (file: File) => {
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${mission.id}/proof_${Date.now()}.${fileExt}`
+      const { data, error } = await supabase.storage
+        .from('driver-documents')
+        .upload(`proofs/${fileName}`, file)
+      
+      if (error) throw error
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('driver-documents')
+        .getPublicUrl(`proofs/${fileName}`)
+        
+      return publicUrl
+    } catch (err) {
+      console.error("Upload error:", err)
+      return null
+    }
+  }
+
   const handleNextStep = async () => {
     if (!mission) return
+    
+    if (mission.status === 'picked_up' && !proofFile) {
+      alert("Veuillez prendre une photo de preuve avant de terminer la livraison.")
+      return
+    }
+
     setUpdating(true)
     
     const nextStatus = mission.status === 'accepted' ? 'picked_up' : 'delivered'
     
     try {
+      let proofUrl = null
+      if (nextStatus === 'delivered' && proofFile) {
+        proofUrl = await handleUploadProof(proofFile)
+      }
+
       const { error } = await supabase
         .from('missions')
-        .update({ status: nextStatus, delivered_at: nextStatus === 'delivered' ? new Date().toISOString() : null })
+        .update({ 
+          status: nextStatus, 
+          delivered_at: nextStatus === 'delivered' ? new Date().toISOString() : null,
+          proof_image_url: proofUrl
+        })
         .eq('id', mission.id)
 
       if (error) throw error
       
       if (nextStatus === 'delivered') {
+        // Update driver balance (85% share)
+        const driverShare = Math.floor(mission.price_fcfa * 0.85)
+        const { data: profile } = await supabase.from('profiles').select('balance').eq('id', mission.driver_id).single()
+        await supabase.from('profiles').update({ balance: (profile?.balance || 0) + driverShare }).eq('id', mission.driver_id)
+
         router.push("/driver/historique")
       } else {
         await fetchActiveMission()
@@ -128,10 +171,31 @@ export default function MissionActive() {
                <p className="text-gray-500 font-medium">#{mission.id.slice(0, 8)} • {mission.type}</p>
             </div>
          </div>
-         <div className="flex gap-3">
+          <div className="flex gap-3">
             <Button variant="outline" className="border-red-100 text-red-500 hover:bg-red-50 font-bold flex gap-2">
                <Flag className="w-4 h-4" /> Signaler
             </Button>
+            
+            {mission.status === 'picked_up' && (
+               <div className="relative">
+                  <input 
+                    type="file" 
+                    id="proof-upload" 
+                    accept="image/*" 
+                    className="hidden" 
+                    capture="environment"
+                    onChange={(e) => setProofFile(e.target.files?.[0] || null)}
+                  />
+                  <Button 
+                    onClick={() => document.getElementById('proof-upload')?.click()}
+                    variant="outline" 
+                    className={`border-brand-blue text-brand-blue font-bold flex gap-2 ${proofFile ? 'bg-green-50 border-green-200 text-green-600' : ''}`}
+                  >
+                     <Camera className="w-4 h-4" /> {proofFile ? "Photo prise ✓" : "Preuve Photo"}
+                  </Button>
+               </div>
+            )}
+
             <Button 
                onClick={handleNextStep}
                disabled={updating}
@@ -140,7 +204,7 @@ export default function MissionActive() {
                {updating ? <Loader2 className="w-5 h-5 animate-spin" /> : 
                 mission.status === 'accepted' ? "Colis Récupéré" : "Terminer la Livraison"}
             </Button>
-         </div>
+          </div>
       </div>
 
       <div className="flex-1 flex flex-col lg:flex-row gap-8 min-h-0">

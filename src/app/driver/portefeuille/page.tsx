@@ -97,6 +97,8 @@ export default function PortefeuillePage() {
     } finally {
       setLoading(false)
     }
+  }
+
   const handleWithdrawal = async () => {
     if (balance < 1000) {
       toast.error("Le solde minimum pour un retrait est de 1,000 FCFA")

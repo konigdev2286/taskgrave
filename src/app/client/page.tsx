@@ -94,13 +94,13 @@ export default function ClientDashboard() {
 
         <Card className="border-none shadow-premium bg-white p-6 overflow-hidden relative group">
            <div className="relative z-10">
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Points Fidélité</p>
-              <h3 className="text-3xl font-black text-brand-orange">0 <span className="text-xs uppercase opacity-40">pts</span></h3>
-              <Link href="/client/fidelite" className="inline-flex items-center text-[10px] font-black text-brand-orange mt-4 hover:underline uppercase tracking-tighter">
-                 Échanger mes points <ChevronRight className="w-3 h-3 ml-1" />
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Mon Portefeuille</p>
+              <h3 className="text-3xl font-black text-brand-orange">{profile?.balance?.toLocaleString() || 0} <span className="text-xs uppercase opacity-40">FCFA</span></h3>
+              <Link href="/client/portefeuille" className="inline-flex items-center text-[10px] font-black text-brand-orange mt-4 hover:underline uppercase tracking-tighter">
+                 Recharger le compte <ChevronRight className="w-3 h-3 ml-1" />
               </Link>
            </div>
-           <Gift className="absolute -bottom-4 -right-4 w-24 h-24 text-orange-50 group-hover:scale-110 transition-transform" />
+           <TrendingUp className="absolute -bottom-4 -right-4 w-24 h-24 text-orange-50 group-hover:scale-110 transition-transform" />
         </Card>
 
         <Link href="/client/historique" className="block">

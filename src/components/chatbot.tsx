@@ -29,15 +29,16 @@ export default function Chatbot({ asNavbarItem = false }: { asNavbarItem?: boole
         body: JSON.stringify({ messages: [...messages, userMessage] })
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        console.error("Chat API error status:", response.status);
-        throw new Error("API error");
+        throw new Error(data.details || data.error || "API error")
       }
 
-      const data = await response.json()
       setMessages(prev => [...prev, { role: 'bot', text: data.text }])
-    } catch (err) {
-      console.error(err)
+    } catch (err: any) {
+      console.error("[Chatbot] Error:", err.message)
+      // On affiche l'erreur MAIS on ne l'ajoute pas à l'historique permanent avec le rôle 'bot'
       setMessages(prev => [...prev, { role: 'bot', text: "Désolé, je rencontre des difficultés techniques actuellement. Veuillez réessayer plus tard ou nous appeler au +242 06 621 73 95." }])
     } finally {
       setIsTyping(false)

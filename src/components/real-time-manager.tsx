@@ -38,9 +38,21 @@ const ICON_COLOR_MAP: Record<NotifType, string> = {
 export function RealTimeManager() {
   const [notifications, setNotifications] = useState<Notification[]>([])
 
-  const addNotification = (notif: Omit<Notification, 'id'>, duration = 6000) => {
+  const addNotification = async (notif: Omit<Notification, 'id'>, duration = 6000, link?: string) => {
     const id = Math.random().toString(36).substring(2, 9)
     setNotifications(prev => [{ ...notif, id }, ...prev].slice(0, 5)) // max 5 visible
+
+    // persist to DB — use getSession (no lock) to avoid contention
+    const { data: { session } } = await supabase.auth.getSession()
+    if (session?.user) {
+      await supabase.from('notifications').insert({
+        user_id: session.user.id,
+        title: notif.title,
+        message: notif.message,
+        type: notif.type,
+        link
+      })
+    }
 
     // Browser Notification
     if (document.visibilityState === 'hidden') {
@@ -73,14 +85,18 @@ export function RealTimeManager() {
     let profileSub: any = null
     let newUserSub: any = null
     let chatSub: any = null
+    let watchId: number | null = null
 
     async function setupSubscriptions() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      // Use getSession() — does NOT acquire a lock, prevents contention
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) return
+
+      const user = session.user
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, is_online')
         .eq('id', user.id)
         .single()
 
@@ -232,6 +248,24 @@ export function RealTimeManager() {
           }
         })
         .subscribe()
+      // ── GPS tracking (drivers only) ──────────────────────────
+      if (profile.role === 'driver' && 'geolocation' in navigator) {
+        watchId = navigator.geolocation.watchPosition(
+          async (position) => {
+            const { latitude, longitude } = position.coords
+            await supabase
+              .from('profiles')
+              .update({
+                last_location_lat: latitude,
+                last_location_lng: longitude,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', user.id)
+          },
+          (error) => console.error('Error watching position:', error),
+          { enableHighAccuracy: true }
+        )
+      }
     }
 
     setupSubscriptions()
@@ -241,6 +275,7 @@ export function RealTimeManager() {
       if (profileSub) supabase.removeChannel(profileSub)
       if (newUserSub) supabase.removeChannel(newUserSub)
       if (chatSub) supabase.removeChannel(chatSub)
+      if (watchId !== null) navigator.geolocation.clearWatch(watchId)
     }
   }, [])
 

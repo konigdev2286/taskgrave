@@ -11,12 +11,12 @@ export function useProfile() {
   const [loading, setLoading] = useState(true)
 
   const fetchProfile = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (session?.user) {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', session.user.id)
         .maybeSingle()
       if (!error) setProfile(data)
     }
@@ -28,12 +28,17 @@ export function useProfile() {
 
     async function init() {
       await fetchProfile()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user) {
+        const channelName = `profile-${session.user.id}`
+        // Remove any existing channel with same name (React StrictMode double-mount)
+        const existing = supabase.getChannels().find((c: any) => c.topic === `realtime:${channelName}`)
+        if (existing) await supabase.removeChannel(existing)
+
         subscription = supabase
-          .channel(`profile-${user.id}`)
+          .channel(channelName)
           .on('postgres_changes',
-            { event: '*', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
+            { event: '*', schema: 'public', table: 'profiles', filter: `id=eq.${session.user.id}` },
             (payload) => { setProfile(payload.new) }
           )
           .subscribe()
@@ -55,15 +60,15 @@ export function useMissions(role: string) {
   const [loading, setLoading] = useState(true)
 
   const fetchMissions = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.user) return
 
     let query = supabase.from('missions').select('*, client:client_id(full_name, phone), driver:driver_id(full_name, phone)')
 
     if (role === 'client') {
-      query = query.eq('client_id', user.id)
+      query = query.eq('client_id', session.user.id)
     } else if (role === 'driver') {
-      query = query.or(`status.eq.pending,driver_id.eq.${user.id}`)
+      query = query.or(`status.eq.pending,driver_id.eq.${session.user.id}`)
     }
     // admin gets all
 
@@ -322,57 +327,87 @@ export function useAdminNotificationCount() {
   return { pendingVerifications, pendingMissions, total: pendingVerifications + pendingMissions }
 }
 // ─────────────────────────────────────────────
-// Hook: Client — Mission status updates for bell badge
+// Hook: Notifications (global audit trail)
 // ─────────────────────────────────────────────
-export function useClientNotificationCount() {
-  const [count, setCount] = useState(0)
+export function useNotifications() {
+  const [notifications, setNotifications] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [unreadCount, setUnreadCount] = useState(0)
 
-  const fetch = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+  const fetchNotifications = useCallback(async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.user) return
 
-    const { count: mCount } = await supabase.from('missions')
-      .select('*', { count: 'exact', head: true })
-      .eq('client_id', user.id)
-      .in('status', ['accepted', 'picked_up'])
-    
-    setCount(mCount || 0)
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .order('created_at', { ascending: false })
+      .limit(50)
+
+    if (!error) {
+      setNotifications(data || [])
+      setUnreadCount(data?.filter((n: any) => !n.is_read).length || 0)
+    }
+    setLoading(false)
   }, [])
 
   useEffect(() => {
-    fetch()
-    const sub = supabase
-      .channel(`client-notif-missions-${Math.random()}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'missions' }, fetch)
-      .subscribe()
-    return () => { supabase.removeChannel(sub) }
-  }, [fetch])
+    fetchNotifications()
+    let sub: any = null
+    
+    async function init() {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user) {
+        sub = supabase
+          .channel(`notifs-${session.user.id}`)
+          .on('postgres_changes', { 
+            event: '*', 
+            schema: 'public', 
+            table: 'notifications', 
+            filter: `user_id=eq.${session.user.id}` 
+          }, fetchNotifications)
+          .subscribe()
+      }
+    }
 
-  return { count }
+    init()
+    return () => { if (sub) supabase.removeChannel(sub) }
+  }, [fetchNotifications])
+
+  const markAsRead = async (id: string) => {
+    await supabase.from('notifications').update({ is_read: true }).eq('id', id)
+    fetchNotifications()
+  }
+
+  return { notifications, unreadCount, loading, markAsRead, refresh: fetchNotifications }
 }
 
 // ─────────────────────────────────────────────
-// Hook: Driver — Available missions for bell badge
+// Hook: Client — Mission status updates for bell badge
+// ─────────────────────────────────────────────
+export function useClientNotificationCount() {
+  const { unreadCount } = useNotifications()
+  return { count: unreadCount }
+}
+
+// ─────────────────────────────────────────────
+// Hook: Driver — Available missions + notifications
 // ─────────────────────────────────────────────
 export function useDriverNotificationCount() {
-  const [count, setCount] = useState(0)
+  const { unreadCount } = useNotifications()
+  const [pendingMissions, setPendingMissions] = useState(0)
 
-  const fetch = useCallback(async () => {
-    const { count: mCount } = await supabase.from('missions')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'pending')
-    
-    setCount(mCount || 0)
+  const fetchM = useCallback(async () => {
+    const { count } = await supabase.from('missions').select('*', { count: 'exact', head: true }).eq('status', 'pending')
+    setPendingMissions(count || 0)
   }, [])
 
   useEffect(() => {
-    fetch()
-    const sub = supabase
-      .channel(`driver-notif-missions-${Math.random()}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'missions' }, fetch)
-      .subscribe()
+    fetchM()
+    const sub = supabase.channel('driver-m-count').on('postgres_changes', { event: '*', schema: 'public', table: 'missions' }, fetchM).subscribe()
     return () => { supabase.removeChannel(sub) }
-  }, [fetch])
+  }, [fetchM])
 
-  return { count }
+  return { count: unreadCount + pendingMissions }
 }
