@@ -29,8 +29,33 @@ export default function CommanderPage() {
     receiverPhone: "",
   })
 
+  const [dynamicPrice, setDynamicPrice] = useState(1000)
+
+  // Grille Tarifaire from Images
+  const DELIVERY_ZONES = [
+    { name: "Centre Ville", price: 1000, keywords: ["poto-poto", "poto poto", "chu", "chu", "och", "plateau", "hotel de ville", "ccf", "prefecture", "loutassi", "batignolles", "moungali"] },
+    { name: "Périphérie 1500F", price: 1500, keywords: ["talangai", "ouenze", "moukondo", "mpila", "bacongo", "makelekele", "poudriere", "bifouiti", "mouhoumi", "mikalou", "petit chose"] },
+    { name: "Périphérie 2000F", price: 2000, keywords: ["la base", "matour", "kinsoundji", "barrage", "matimou", "cite des 17", "mafouta", "madibou", "peka", "mfilou", "nkombo", "massengo"] },
+    { name: "Périphérie 2500F", price: 2500, keywords: ["nkombe", "mbono", "mayanga", "sadelmi", "manianga", "ngamakosso", "soprogie", "djoue", "oms"] },
+    { name: "Longue Portée 3000F", price: 3000, keywords: ["nganga lingolo", "academie", "domaine"] },
+    { name: "Longue Portée 3500F", price: 3500, keywords: ["djiri", "kintele"] },
+    { name: "Longue Portée 5000F", price: 5000, keywords: ["igne", "samba"] },
+  ]
+
+  useEffect(() => {
+    if (service === 'colis' && formData.destination) {
+      const dest = formData.destination.toLowerCase()
+      const zone = DELIVERY_ZONES.find(z => z.keywords.some(k => dest.includes(k)))
+      if (zone) {
+        setDynamicPrice(zone.price)
+      } else {
+        setDynamicPrice(1000) // Default base price
+      }
+    }
+  }, [formData.destination, service])
+
   const services = [
-    { id: "colis", title: "Livraison à domicile", desc: "Vos colis, repas, documents...", icon: Package, price: 1500, color: "blue" },
+    { id: "colis", title: "Livraison à domicile", desc: "Vos colis, repas, documents...", icon: Package, price: dynamicPrice, color: "blue" },
     { id: "gaz", title: "Livraison de Gaz", desc: "Échange de bouteille vide/pleine", icon: Flame, price: 2500, color: "orange" },
     { id: "moving", title: "Déménagement", desc: "Transport de meubles & utilitaire", icon: Truck, price: 25000, color: "blue" },
     { id: "storage", title: "Stockage & Garde", desc: "Espace sécurisé temporaire", icon: Box, price: 5000, color: "blue" },
@@ -365,6 +390,14 @@ export default function CommanderPage() {
                                  value={formData.destination}
                                  onChange={(e) => setFormData({...formData, destination: e.target.value})}
                                />
+                               {service === 'colis' && formData.destination && (
+                                  <div className="flex items-center gap-2 mt-2 ml-4">
+                                     <div className="w-2 h-2 rounded-full bg-brand-orange animate-pulse" />
+                                     <p className="text-[10px] font-black text-brand-orange uppercase tracking-widest">
+                                        Zone détectée : {DELIVERY_ZONES.find(z => z.keywords.some(k => formData.destination.toLowerCase().includes(k)))?.name || "Standard (1000F)"}
+                                     </p>
+                                  </div>
+                               )}
                             </div>
                          </div>
                       </div>
