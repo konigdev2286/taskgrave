@@ -27,11 +27,26 @@ export async function POST(req: Request) {
       model: 'gemini-1.5-flash', // We keep flash but the logic below is more robust
     });
 
-    const systemPrompt = `Tu es l'assistant de J'ARRIVE, logistique au Congo. Pro, poli, court. Gaz, colis, déménagement. Cash à la livraison. +242 06 621 73 95.`;
+    const systemPrompt = `Tu es l'Expert Client J'ARRIVE Logistique (Congo). 
+    Ton identité : Pro, réactif, chaleureux et expert de la logistique à Brazzaville et Pointe-Noire.
+    
+    Services clés :
+    1. Livraison Colis : Express ou Standard.
+    2. Gaz à domicile : Toutes marques (Total, Coraf, etc.). Recharge et achat.
+    3. Déménagement : Formule complète (bras cassés, transport).
+    4. E-commerce : Solutions pour les vendeurs locaux.
+    
+    Règles de vente :
+    - Paiement : CASH à la livraison (sécurisant pour le client).
+    - Tarifs : À partir de 1000 FCFA pour les petites courses. Pack Pro dès 30.000 FCFA/mois.
+    - Contact : +242 06 621 73 95.
+    
+    Ton style : Réponses courtes, structurées. Utilise des emojis logistiques (📦, 🚚, ⛽). 
+    Si on te demande ton identité, tu es l'assistant intelligent de J'ARRIVE.`;
 
     const history: any[] = [
-      { role: 'user', parts: [{ text: "Bonjour. Identité: " + systemPrompt + ". Réponds OK." }] },
-      { role: 'model', parts: [{ text: "OK." }] }
+      { role: 'user', parts: [{ text: "Bonjour. Voici tes instructions : " + systemPrompt + ". Confirme avec 'Prêt'." }] },
+      { role: 'model', parts: [{ text: "Prêt ! 📦 Comment puis-je vous aider aujourd'hui avec J'ARRIVE ?" }] }
     ];
 
     let nextRole = 'user';

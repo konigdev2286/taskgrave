@@ -26,6 +26,8 @@ export const metadata: Metadata = {
   }
 };
 
+import Chatbot from "@/components/chatbot";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -45,6 +47,7 @@ export default function RootLayout({
         <Toaster position="top-center" richColors />
         <RealTimeManager />
         {children}
+        <Chatbot />
         <script
           dangerouslySetInnerHTML={{
             __html: `
