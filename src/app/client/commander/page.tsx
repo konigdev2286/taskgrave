@@ -30,6 +30,8 @@ export default function CommanderPage() {
   })
 
   const [dynamicPrice, setDynamicPrice] = useState(1000)
+  const [storageWeight, setStorageWeight] = useState("0-5")
+  const [storagePeriod, setStoragePeriod] = useState("jour")
 
   // Grille Tarifaire from Images
   const DELIVERY_ZONES = [
@@ -41,6 +43,20 @@ export default function CommanderPage() {
     { name: "Longue Portée 3500F", price: 3500, keywords: ["djiri", "kintele"] },
     { name: "Longue Portée 5000F", price: 5000, keywords: ["igne", "samba"] },
   ]
+
+  const getStoragePrice = () => {
+    if (storageWeight === "0-5") {
+      if (storagePeriod === "jour") return 500
+      if (storagePeriod === "semaine") return 2500
+      return 5000 // mois
+    }
+    if (storageWeight === "6-10") {
+      if (storagePeriod === "jour") return 1000
+      if (storagePeriod === "semaine") return 5000
+      return 10000 // mois
+    }
+    return 25000 // 100kg+ base devis
+  }
 
   useEffect(() => {
     if (service === 'colis' && formData.destination) {
@@ -58,7 +74,7 @@ export default function CommanderPage() {
     { id: "colis", title: "Livraison à domicile", desc: "Vos colis, repas, documents...", icon: Package, price: dynamicPrice, color: "blue" },
     { id: "gaz", title: "Livraison de Gaz", desc: "Échange de bouteille vide/pleine", icon: Flame, price: 2500, color: "orange" },
     { id: "moving", title: "Déménagement", desc: "Transport de meubles & utilitaire", icon: Truck, price: 25000, color: "blue" },
-    { id: "storage", title: "Stockage & Garde", desc: "Espace sécurisé temporaire", icon: Box, price: 5000, color: "blue" },
+    { id: "storage", title: "Stockage & Garde", desc: "Espace sécurisé temporaire", icon: Box, price: getStoragePrice(), color: "blue" },
   ]
 
   const vehicles = [
@@ -277,6 +293,63 @@ export default function CommanderPage() {
                   </Card>
                 ))}
              </div>
+
+             <AnimatePresence>
+               {service === 'storage' && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }} 
+                    animate={{ opacity: 1, y: 0 }} 
+                    className="space-y-6 pt-6"
+                  >
+                     <div className="flex items-center gap-3">
+                        <div className="w-2 h-8 bg-brand-blue rounded-full" />
+                        <h3 className="text-2xl font-black text-slate-900">Options de Stockage</h3>
+                     </div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-4">
+                           <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Poids du colis</p>
+                           <div className="flex gap-2">
+                              {[
+                                { id: "0-5", label: "0 - 5 kg" },
+                                { id: "6-10", label: "6 - 10 kg" },
+                                { id: "100+", label: "100 kg +" }
+                              ].map(w => (
+                                <button
+                                  key={w.id}
+                                  onClick={() => setStorageWeight(w.id)}
+                                  className={`flex-1 py-4 px-2 rounded-2xl font-bold text-xs uppercase tracking-tight transition-all border-2 ${
+                                    storageWeight === w.id ? 'bg-slate-900 text-white border-slate-900 shadow-lg' : 'bg-white text-gray-400 border-gray-100 hover:border-gray-200'
+                                  }`}
+                                >
+                                  {w.label}
+                                </button>
+                              ))}
+                           </div>
+                        </div>
+                        <div className="space-y-4">
+                           <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Durée souhaitée</p>
+                           <div className="flex gap-2">
+                              {[
+                                { id: "jour", label: "Par Jour" },
+                                { id: "semaine", label: "Par Semaine" },
+                                { id: "mois", label: "Par Mois" }
+                              ].map(p => (
+                                <button
+                                  key={p.id}
+                                  onClick={() => setStoragePeriod(p.id)}
+                                  className={`flex-1 py-4 px-2 rounded-2xl font-bold text-xs uppercase tracking-tight transition-all border-2 ${
+                                    storagePeriod === p.id ? 'bg-brand-blue text-white border-brand-blue shadow-lg' : 'bg-white text-gray-400 border-gray-100 hover:border-gray-200'
+                                  }`}
+                                >
+                                  {p.label}
+                                </button>
+                              ))}
+                           </div>
+                        </div>
+                     </div>
+                  </motion.div>
+               )}
+             </AnimatePresence>
 
              <AnimatePresence>
                {service && (
