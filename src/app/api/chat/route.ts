@@ -46,8 +46,6 @@ export async function POST(req: Request) {
     const chat = model.startChat({ history });
     const result = await chat.sendMessage(messages[messages.length - 1].text);
     return NextResponse.json({ text: result.response.text() });
-    
-    return NextResponse.json({ text: responseText });
   } catch (error: any) {
     console.error('[ChatAPI] Gemini error:', error.message || error);
     return NextResponse.json({ 
