@@ -193,7 +193,6 @@ export function TrackingMap({
         scrollWheelZoom={false}
         className="w-full h-full z-0"
         dragging={true}
-        tap={true}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
