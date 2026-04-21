@@ -8,10 +8,19 @@ import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
 import { toast } from "sonner"
 
+interface Driver {
+  id: string
+  full_name: string
+  phone: string
+  is_verified: boolean
+  role: 'driver'
+  created_at: string
+}
+
 export default function AdminVerifications() {
-  const [drivers, setDrivers] = useState<any[]>([])
+  const [drivers, setDrivers] = useState<Driver[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedDriver, setSelectedDriver] = useState<any>(null)
+  const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null)
   const [processing, setProcessing] = useState(false)
   const [documents, setDocuments] = useState<any[]>([])
   const [loadingDocs, setLoadingDocs] = useState(false)
@@ -90,7 +99,7 @@ export default function AdminVerifications() {
         .eq('id', id)
 
       if (error) throw error
-      setSelectedDriver(prev => prev ? { ...prev, is_verified: true } : null)
+      setSelectedDriver((prev) => prev ? { ...prev, is_verified: true } : null)
       toast.success("Conducteur approuvé !")
     } catch (error: any) {
       toast.error("Erreur lors de l'approbation: " + error.message)
