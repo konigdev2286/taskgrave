@@ -22,9 +22,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ text: "Nous livrons toutes les bouteilles de gaz à domicile. Payez simplement à la livraison !" });
     }
 
+    console.log(`[ChatAPI] Using model: gemini-1.5-flash | Key starting with: ${aiKey.substring(0, 7)}...`);
+
     const genAI = new GoogleGenerativeAI(aiKey);
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-1.5-flash', // We keep flash but the logic below is more robust
+      model: 'gemini-1.5-flash-latest', 
     });
 
     const systemPrompt = `Tu es l'Expert Client J'ARRIVE Logistique (Congo). 
