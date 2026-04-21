@@ -9,55 +9,43 @@ export async function POST(req: Request) {
     }
 
     const { messages } = await req.json();
-    console.log('Chat messages received:', messages.length);
+    const lastMessage = (messages[messages.length - 1].text || "").toLowerCase();
+
+    // SIMPLE LOCAL FALLBACK (FREE & INSTANT)
+    if (lastMessage.includes("prix") || lastMessage.includes("tarif") || lastMessage.includes("coûte")) {
+      return NextResponse.json({ text: "Nos tarifs Pros commencent à 30 000 FCFA/mois (Pack Starter). Pour les particuliers, le prix dépend de la course. Consultez la page 'Tarifs' pour plus de détails." });
+    }
+    if (lastMessage.includes("suivi") || lastMessage.includes("où est") || lastMessage.includes("commande")) {
+      return NextResponse.json({ text: "Vous pouvez suivre votre colis en temps réel dans la rubrique 'Suivi' de votre espace client." });
+    }
+    if (lastMessage.includes("gaz")) {
+      return NextResponse.json({ text: "Nous livrons toutes les bouteilles de gaz à domicile. Payez simplement à la livraison !" });
+    }
 
     const genAI = new GoogleGenerativeAI(aiKey);
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-pro', 
+      model: 'gemini-1.5-flash', // We keep flash but the logic below is more robust
     });
 
-    const systemPrompt = `Tu es l'assistant de J'ARRIVE, une plateforme de logistique et de livraison au Congo-Brazzaville. Professionnel, poli, concis.
-Services : livraison colis/repas, gaz, déménagement, stockage.
-Paiement : Cash ou MoMo à la livraison (ou via portefeuille client si approvisionné). 
-Abonnements Pro : Starter (30k/25 courses), Standard (80k/80 courses), Pro (200k/250 courses).
-Assistance : +242 06 621 73 95.
-Réponds en moins de 3 phrases. Si on demande "où est ma commande", renvoie vers la rubrique "Suivi".`;
+    const systemPrompt = `Tu es l'assistant de J'ARRIVE, logistique au Congo. Pro, poli, court. Gaz, colis, déménagement. Cash à la livraison. +242 06 621 73 95.`;
 
-    // Valid history for Gemini: must start with 'user' and alternate 'user'/'model'
-    const history: any[] = [];
-    
-    // Insert system prompt as the first message context if history is empty
-    history.push({
-      role: 'user',
-      parts: [{ text: "CONSIGNE SYSTEME: " + systemPrompt + " . Réponds 'OK' si tu as compris." }]
-    });
-    history.push({
-        role: 'model',
-        parts: [{ text: "OK, j'ai compris. Je suis prêt à aider les clients de J'ARRIVE." }]
-    });
+    const history: any[] = [
+      { role: 'user', parts: [{ text: "Bonjour. Identité: " + systemPrompt + ". Réponds OK." }] },
+      { role: 'model', parts: [{ text: "OK." }] }
+    ];
 
     let nextRole = 'user';
-
     for (let i = 0; i < messages.length - 1; i++) {
-      const msg = messages[i];
-      const geminiRole = msg.role === 'bot' ? 'model' : 'user';
-      
-      if (geminiRole === nextRole) {
-        history.push({
-          role: geminiRole,
-          parts: [{ text: msg.text || "" }]
-        });
-        nextRole = geminiRole === 'user' ? 'model' : 'user';
-      }
+        const geminiRole = messages[i].role === 'bot' ? 'model' : 'user';
+        if (geminiRole === nextRole) {
+            history.push({ role: geminiRole, parts: [{ text: messages[i].text }] });
+            nextRole = geminiRole === 'user' ? 'model' : 'user';
+        }
     }
-    
-    console.log('[ChatAPI] Cleaned history length:', history.length);
 
-    const lastMessage = messages[messages.length - 1].text;
     const chat = model.startChat({ history });
-    
-    const result = await chat.sendMessage(lastMessage);
-    const responseText = result.response.text();
+    const result = await chat.sendMessage(messages[messages.length - 1].text);
+    return NextResponse.json({ text: result.response.text() });
     
     return NextResponse.json({ text: responseText });
   } catch (error: any) {
