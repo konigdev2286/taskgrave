@@ -286,7 +286,16 @@ export default function MissionActive() {
                         </div>
                      </div>
                      <div className="grid grid-cols-2 gap-3">
-                        <Button className="bg-white text-brand-blue border border-blue-100 font-bold hover:bg-blue-50 flex gap-2">
+                        <Button 
+                          onClick={() => {
+                            if (mission.client?.phone) {
+                              window.location.href = `tel:${mission.client.phone}`
+                            } else {
+                              alert("Numéro de téléphone non disponible")
+                            }
+                          }}
+                          className="bg-white text-brand-blue border border-blue-100 font-bold hover:bg-blue-50 flex gap-2"
+                        >
                            <Phone className="w-4 h-4" /> Appeler
                         </Button>
                         <ChatDialog 
@@ -299,7 +308,16 @@ export default function MissionActive() {
                                </Button>
                             }
                          />
-                     </div>
+                      </div>
+                      <Button 
+                        onClick={() => {
+                          const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(mission.dest_address)}`;
+                          window.open(url, '_blank');
+                        }}
+                        className="w-full mt-4 bg-brand-blue text-white font-bold h-12 rounded-2xl flex gap-2 shadow-lg shadow-brand-blue/10"
+                      >
+                         <Navigation className="w-5 h-5" /> Lancer le GPS
+                      </Button>
                   </div>
                </CardContent>
             </Card>

@@ -7,6 +7,8 @@ import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { toast } from "sonner"
 
+import { useProfile } from "@/hooks/use-supabase"
+
 type Transaction = {
   id: string
   type: "Revenu" | "Retrait" | "Commission"
@@ -18,7 +20,7 @@ type Transaction = {
 }
 
 export default function PortefeuillePage() {
-  const [balance, setBalance] = useState(0)
+  const { profile, loading: profileLoading } = useProfile()
   const [weekRevenue, setWeekRevenue] = useState(0)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
@@ -35,18 +37,7 @@ export default function PortefeuillePage() {
           return
         }
 
-        await fetchWallet(user.id)
-
-        // Real-time synchronization
-        channel = supabase.channel(`driver_wallet_${user.id}`)
-          .on(
-            'postgres_changes',
-            { event: '*', schema: 'public', table: 'missions', filter: `driver_id=eq.${user.id}` },
-            () => {
-              fetchWallet(user.id)
-            }
-          )
-          .subscribe()
+        await fetchTransactions(user.id)
       } catch (err) {
         console.error("Error setting up wallet:", err)
         setLoading(false)
@@ -54,15 +45,9 @@ export default function PortefeuillePage() {
     }
 
     setupWallet()
-    
-    return () => {
-      if (channel) {
-        supabase.removeChannel(channel)
-      }
-    }
   }, [])
 
-  const fetchWallet = async (userId: string) => {
+  const fetchTransactions = async (userId: string) => {
     try {
       const { data: missions, error } = await supabase
         .from('missions')
@@ -74,15 +59,12 @@ export default function PortefeuillePage() {
       if (error) throw error
 
       if (missions) {
-        let total = 0
         let sevenDaysTotal = 0
         const now = new Date()
         const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
 
         const txs: Transaction[] = missions.map(m => {
-          // Commission example: driver keeps 80%
-          const driverEarn = Math.floor(m.price_fcfa * 0.8)
-          total += driverEarn
+          const driverEarn = Math.floor(m.price_fcfa * 0.85) // Matches MissionActive logic
           
           const deliveredAt = new Date(m.delivered_at || m.created_at)
           if (deliveredAt >= sevenDaysAgo) {
@@ -100,16 +82,17 @@ export default function PortefeuillePage() {
           }
         })
 
-        setBalance(total)
         setWeekRevenue(sevenDaysTotal)
         setTransactions(txs.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).slice(0, 10))
       }
     } catch (err) {
-      console.error("Error fetching wallet:", err)
+      console.error("Error fetching wallet history:", err)
     } finally {
       setLoading(false)
     }
   }
+
+  const balance = profile?.balance || 0
 
   const handleWithdrawal = async () => {
     if (balance < 1000) {
