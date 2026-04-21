@@ -30,16 +30,16 @@ export default function Chatbot({ asNavbarItem = false }: { asNavbarItem?: boole
       })
 
       const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.details || data.error || "API error")
-      }
+      if (!response.ok) throw new Error(data.details || data.error || "Erreur API")
 
       setMessages(prev => [...prev, { role: 'bot', text: data.text }])
     } catch (err: any) {
-      console.error("[Chatbot] Error:", err.message)
-      // On affiche l'erreur MAIS on ne l'ajoute pas à l'historique permanent avec le rôle 'bot'
-      setMessages(prev => [...prev, { role: 'bot', text: "Désolé, je rencontre des difficultés techniques actuellement. Veuillez réessayer plus tard ou nous appeler au +242 06 621 73 95." }])
+      console.error("[Chatbot] Detailed Error:", err)
+      const errorText = err.message?.includes("not found") 
+        ? "Désolé, le modèle d'IA est actuellement indisponible dans votre région. Veuillez contacter le support."
+        : "Désolé, je rencontre des difficultés techniques actuellement. (" + err.message + ")";
+      
+      setMessages(prev => [...prev, { role: 'bot', text: errorText }])
     } finally {
       setIsTyping(false)
     }

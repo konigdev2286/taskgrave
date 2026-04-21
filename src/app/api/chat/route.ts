@@ -13,7 +13,7 @@ export async function POST(req: Request) {
 
     const genAI = new GoogleGenerativeAI(aiKey);
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-1.5-flash', // Fallback to flash-latest or gemini-pro if needed
+      model: 'gemini-pro', 
     });
 
     const systemPrompt = `Tu es l'assistant de J'ARRIVE, une plateforme de logistique et de livraison au Congo-Brazzaville. Professionnel, poli, concis.
