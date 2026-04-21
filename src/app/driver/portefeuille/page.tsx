@@ -3,7 +3,6 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Wallet, ArrowDownRight, ArrowUpRight, Clock, Plus, Smartphone, History, ChevronRight, Loader2 } from "lucide-react"
-import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { toast } from "sonner"
@@ -26,36 +25,49 @@ export default function PortefeuillePage() {
   const [requesting, setRequesting] = useState(false)
 
   useEffect(() => {
-    fetchWallet()
+    let channel: any;
 
-    // Real-time synchronization
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) return
-      const channel = supabase.channel('driver_wallet')
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'missions', filter: `driver_id=eq.${user.id}` },
-          () => {
-            fetchWallet() // Resync on any mission change
-          }
-        )
-        .subscribe()
-        
-      return () => {
+    const setupWallet = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          setLoading(false)
+          return
+        }
+
+        await fetchWallet(user.id)
+
+        // Real-time synchronization
+        channel = supabase.channel(`driver_wallet_${user.id}`)
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'missions', filter: `driver_id=eq.${user.id}` },
+            () => {
+              fetchWallet(user.id)
+            }
+          )
+          .subscribe()
+      } catch (err) {
+        console.error("Error setting up wallet:", err)
+        setLoading(false)
+      }
+    }
+
+    setupWallet()
+    
+    return () => {
+      if (channel) {
         supabase.removeChannel(channel)
       }
-    })
+    }
   }, [])
 
-  const fetchWallet = async () => {
+  const fetchWallet = async (userId: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
       const { data: missions, error } = await supabase
         .from('missions')
         .select('*')
-        .eq('driver_id', user.id)
+        .eq('driver_id', userId)
         .eq('status', 'delivered')
         .order('delivered_at', { ascending: false })
 
@@ -93,7 +105,7 @@ export default function PortefeuillePage() {
         setTransactions(txs.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).slice(0, 10))
       }
     } catch (err) {
-      console.error(err)
+      console.error("Error fetching wallet:", err)
     } finally {
       setLoading(false)
     }
@@ -229,8 +241,8 @@ export default function PortefeuillePage() {
                    <div className="p-8 text-center text-gray-400 font-medium">Aucune transaction pour le moment.</div>
                  ) : (
                    <div className="divide-y divide-gray-50">
-                      {transactions.map((t, i) => (
-                        <div key={i} className="p-5 flex items-center justify-between hover:bg-gray-50/50 transition-colors">
+                      {transactions.map((t) => (
+                        <div key={t.id} className="p-5 flex items-center justify-between hover:bg-gray-50/50 transition-colors">
                            <div className="flex items-center gap-4">
                               <div className={`p-2 rounded-xl ${t.type === 'Revenu' ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'}`}>
                                  {t.type === 'Revenu' ? <ArrowDownRight className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
