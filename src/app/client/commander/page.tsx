@@ -3,7 +3,7 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Truck, Package, MapPin, CreditCard, ChevronRight, Flame, Box, CheckCircle2, Loader2, Bike, Car, User, Phone, Map as MapIcon, ArrowLeft } from "lucide-react"
+import { Truck, Package, MapPin, CreditCard, ChevronRight, Flame, Box, CheckCircle2, Loader2, Bike, Car, User, Phone, Map as MapIcon, ArrowLeft, Info } from "lucide-react"
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { supabase } from "@/lib/supabase"
