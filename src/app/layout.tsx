@@ -20,7 +20,8 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   other: {
     "mobile-web-app-capable": "yes",
-    "apple-mobile-web-app-status-bar-style": "default",
+    "apple-mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-status-bar-style": "black-translucent",
     "format-detection": "telephone=no",
   }
 };
@@ -47,9 +48,11 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              if ('serviceWorker' in navigator) {
+              if ('serviceWorker' in navigator && window.location.hostname !== 'localhost') {
                 window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js');
+                  setTimeout(() => {
+                    navigator.serviceWorker.register('/sw.js').catch(console.error);
+                  }, 2000); // Delay registration for Safari performance
                 });
               }
             `,
