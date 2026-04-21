@@ -22,47 +22,41 @@ export async function POST(req: Request) {
       return NextResponse.json({ text: "Nous livrons toutes les bouteilles de gaz à domicile. Payez simplement à la livraison !" });
     }
 
-    console.log(`[ChatAPI] Using model: gemini-1.5-flash | Key starting with: ${aiKey.substring(0, 7)}...`);
-
     const genAI = new GoogleGenerativeAI(aiKey);
-    const model = genAI.getGenerativeModel({ 
-      model: 'gemini-1.5-flash-latest', 
-    });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     const systemPrompt = `Tu es l'Expert Client J'ARRIVE Logistique (Congo). 
-    Ton identité : Pro, réactif, chaleureux et expert de la logistique à Brazzaville et Pointe-Noire.
+    Ton identité : Professionnel, expert local, chaleureux.
     
-    Services clés :
-    1. Livraison Colis : Express ou Standard.
-    2. Gaz à domicile : Toutes marques (Total, Coraf, etc.). Recharge et achat.
-    3. Déménagement : Formule complète (bras cassés, transport).
-    4. E-commerce : Solutions pour les vendeurs locaux.
+    SERVICES & TARIFS :
+    1. LIVRAISON (à la course) :
+       - Centre Ville (CHU, Poto-poto, OCH, Plateau) : 1000 FCFA
+       - Périphérie A (Ouenzé, Talangaï, Bacongo, Rond-point) : 1500 FCFA
+       - Périphérie B (Mfilou, Nkombo, Madibou, Sadelmi) : 2000 - 2500 FCFA
+       - Longue portée (Kintélé, Nganga Lingolo, Igné, Samba) : 3000 - 5000 FCFA
+       
+    2. GAZ À DOMICILE :
+       - Achat et recharge de toutes marques (Total, Coraf, etc.). Livraison express.
+       
+    3. DÉMÉNAGEMENT :
+       - Service complet : transport et manutention ("c'est nous qui le faisons"). Sur devis.
+       
+    4. STOCKAGE (par jour/semaine/mois) :
+       - 0-5kg : 500 / 2500 / 5000 FCFA
+       - 6-10kg : 1000 / 5000 / 10000 FCFA
+       - 100kg+ : Sur devis.
     
-    Règles de vente :
-    - Paiement : CASH à la livraison (sécurisant pour le client).
-    - Tarifs : À partir de 1000 FCFA pour les petites courses. Pack Pro dès 30.000 FCFA/mois.
+    RÈGLES IMPORTANTES :
+    - Paiement : CASH à la livraison uniquement.
     - Contact : +242 06 621 73 95.
-    
-    Ton style : Réponses courtes, structurées. Utilise des emojis logistiques (📦, 🚚, ⛽). 
-    Si on te demande ton identité, tu es l'assistant intelligent de J'ARRIVE.`;
+    - Style : Répondre avec emojis (🚚, ⛽, 📦). Très court.`;
 
-    const history: any[] = [
-      { role: 'user', parts: [{ text: "Bonjour. Voici tes instructions : " + systemPrompt + ". Confirme avec 'Prêt'." }] },
-      { role: 'model', parts: [{ text: "Prêt ! 📦 Comment puis-je vous aider aujourd'hui avec J'ARRIVE ?" }] }
-    ];
+    const userMessage = messages[messages.length - 1].text;
+    const finalPrompt = `${systemPrompt}\n\nClient: ${userMessage}\nAssistant:`;
 
-    let nextRole = 'user';
-    for (let i = 0; i < messages.length - 1; i++) {
-        const geminiRole = messages[i].role === 'bot' ? 'model' : 'user';
-        if (geminiRole === nextRole) {
-            history.push({ role: geminiRole, parts: [{ text: messages[i].text }] });
-            nextRole = geminiRole === 'user' ? 'model' : 'user';
-        }
-    }
-
-    const chat = model.startChat({ history });
-    const result = await chat.sendMessage(messages[messages.length - 1].text);
-    return NextResponse.json({ text: result.response.text() });
+    const result = await model.generateContent(finalPrompt);
+    const response = await result.response;
+    return NextResponse.json({ text: response.text() });
   } catch (error: any) {
     console.error('[ChatAPI] Global Error:', error);
     
