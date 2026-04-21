@@ -62,10 +62,16 @@ export async function POST(req: Request) {
     const result = await chat.sendMessage(messages[messages.length - 1].text);
     return NextResponse.json({ text: result.response.text() });
   } catch (error: any) {
-    console.error('[ChatAPI] Gemini error:', error.message || error);
+    console.error('[ChatAPI] Global Error:', error);
+    
+    // Extract more details if available (e.g. from Google SDK)
+    const errorMessage = error.message || "Erreur inconnue";
+    const status = error.status || 500;
+    
     return NextResponse.json({ 
-      error: 'Erreur technique',
-      details: error.message 
-    }, { status: 500 });
+      error: 'Erreur technique AI',
+      details: errorMessage,
+      code: error.code || 'UNKNOWN'
+    }, { status });
   }
 }

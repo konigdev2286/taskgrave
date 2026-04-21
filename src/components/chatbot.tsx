@@ -35,9 +35,14 @@ export default function Chatbot({ asNavbarItem = false }: { asNavbarItem?: boole
       setMessages(prev => [...prev, { role: 'bot', text: data.text }])
     } catch (err: any) {
       console.error("[Chatbot] Detailed Error:", err)
-      const errorText = err.message?.includes("not found") 
-        ? "Désolé, le modèle d'IA est actuellement indisponible dans votre région. Veuillez contacter le support."
-        : "Désolé, je rencontre des difficultés techniques actuellement. (" + err.message + ")";
+      
+      let errorText = "Désolé, je rencontre des difficultés techniques. (" + err.message + ")";
+      
+      if (err.message?.toLowerCase().includes("not found")) {
+        errorText = "Modèle IA indisponible ou région restreinte. Veuillez vérifier votre configuration Google AI.";
+      } else if (err.message?.toLowerCase().includes("api key")) {
+        errorText = "Clé API invalide ou manquante. Vérifiez votre fichier .env.local.";
+      }
       
       setMessages(prev => [...prev, { role: 'bot', text: errorText }])
     } finally {
