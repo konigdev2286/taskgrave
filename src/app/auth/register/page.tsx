@@ -153,8 +153,7 @@ export default function RegisterPage() {
        const { error } = await supabase.auth.signInWithOAuth({
          provider,
          options: {
-           redirectTo: `${window.location.origin}/auth/callback?role=${role}`,
-           data: { role } // Ceci est stocké dans raw_user_meta_data
+           redirectTo: `${window.location.origin}/auth/callback?role=${role}`
          }
        })
        if (error) throw error
