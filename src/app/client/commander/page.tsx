@@ -73,6 +73,16 @@ export default function CommanderPage() {
         return
       }
 
+
+      console.log("[Order] Creating mission with data:", {
+        client_id: user.id,
+        service,
+        vehicleType,
+        formData,
+        totalPrice,
+        paymentMethod
+      })
+
       const { data: mission, error } = await supabase
         .from('missions')
         .insert({
@@ -91,19 +101,29 @@ export default function CommanderPage() {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error("[Order] Supabase mission insertion error:", error)
+        throw error
+      }
+
+      console.log("[Order] Mission created successfully:", mission)
 
       if (paymentMethod === 'wallet') {
         const { error: balanceError } = await supabase
           .from('profiles')
           .update({ balance: (profile?.balance || 0) - totalPrice })
           .eq('id', user.id)
-        if (balanceError) throw balanceError
+        if (balanceError) {
+          console.error("[Order] Balance update error:", balanceError)
+          throw balanceError
+        }
       }
 
-      // Track admin notification
+      // Track admin notification - Fetch an admin first
+      const { data: adminUser } = await supabase.from('profiles').select('id').eq('role', 'admin').limit(1).maybeSingle()
+      
       await supabase.from('notifications').insert({
-        user_id: null, // Broadcast to admins
+        user_id: adminUser?.id, 
         title: "Nouvelle Mission",
         message: `Mission ${service} créée par ${profile?.full_name || 'un client'}.`,
         type: 'info',
